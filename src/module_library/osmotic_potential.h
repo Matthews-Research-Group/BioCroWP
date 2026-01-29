@@ -15,7 +15,29 @@ class osmotic_potential : public direct_module
         : direct_module(),
 
           // Get references to input quantities
-          leaf_temperature{get_input(input_quantities, "leaf_temperature")},
+          sunlit_leaf_temperature_layer_0{get_input(input_quantities, "sunlit_leaf_temperature_layer_0")},
+          sunlit_leaf_temperature_layer_1{get_input(input_quantities, "sunlit_leaf_temperature_layer_1")},
+          sunlit_leaf_temperature_layer_2{get_input(input_quantities, "sunlit_leaf_temperature_layer_2")},
+          sunlit_leaf_temperature_layer_3{get_input(input_quantities, "sunlit_leaf_temperature_layer_3")},
+          sunlit_leaf_temperature_layer_4{get_input(input_quantities, "sunlit_leaf_temperature_layer_4")},
+          sunlit_leaf_temperature_layer_5{get_input(input_quantities, "sunlit_leaf_temperature_layer_5")},
+          sunlit_leaf_temperature_layer_6{get_input(input_quantities, "sunlit_leaf_temperature_layer_6")},
+          sunlit_leaf_temperature_layer_7{get_input(input_quantities, "sunlit_leaf_temperature_layer_7")},
+          sunlit_leaf_temperature_layer_8{get_input(input_quantities, "sunlit_leaf_temperature_layer_8")},
+          sunlit_leaf_temperature_layer_9{get_input(input_quantities, "sunlit_leaf_temperature_layer_9")},
+
+          shaded_leaf_temperature_layer_0{get_input(input_quantities, "shaded_leaf_temperature_layer_0")},
+          shaded_leaf_temperature_layer_1{get_input(input_quantities, "shaded_leaf_temperature_layer_1")},
+          shaded_leaf_temperature_layer_2{get_input(input_quantities, "shaded_leaf_temperature_layer_2")},
+          shaded_leaf_temperature_layer_3{get_input(input_quantities, "shaded_leaf_temperature_layer_3")},
+          shaded_leaf_temperature_layer_4{get_input(input_quantities, "shaded_leaf_temperature_layer_4")},
+          shaded_leaf_temperature_layer_5{get_input(input_quantities, "shaded_leaf_temperature_layer_5")},
+          shaded_leaf_temperature_layer_6{get_input(input_quantities, "shaded_leaf_temperature_layer_6")},
+          shaded_leaf_temperature_layer_7{get_input(input_quantities, "shaded_leaf_temperature_layer_7")},
+          shaded_leaf_temperature_layer_8{get_input(input_quantities, "shaded_leaf_temperature_layer_8")},
+          shaded_leaf_temperature_layer_9{get_input(input_quantities, "shaded_leaf_temperature_layer_9")},
+
+          //leaf_temperature{get_input(input_quantities, "leaf_temperature")},
           soil_temperature_avg{get_input(input_quantities, "soil_temperature_avg")},
 
         //   stem_soluble_sugar{get_input(input_qunatities, "stem_soluble_sugar")}, // waiting on partioning fraction
@@ -39,7 +61,29 @@ class osmotic_potential : public direct_module
 
    private:
     // References to input quantities
-    double const& leaf_temperature;
+    double const & sunlit_leaf_temperature_layer_0;
+    double const & sunlit_leaf_temperature_layer_1;
+    double const & sunlit_leaf_temperature_layer_2;
+    double const & sunlit_leaf_temperature_layer_3;
+    double const & sunlit_leaf_temperature_layer_4;
+    double const & sunlit_leaf_temperature_layer_5;
+    double const & sunlit_leaf_temperature_layer_6;
+    double const & sunlit_leaf_temperature_layer_7;
+    double const & sunlit_leaf_temperature_layer_8;
+    double const & sunlit_leaf_temperature_layer_9;
+
+    double const & shaded_leaf_temperature_layer_0;
+    double const & shaded_leaf_temperature_layer_1;
+    double const & shaded_leaf_temperature_layer_2;
+    double const & shaded_leaf_temperature_layer_3;
+    double const & shaded_leaf_temperature_layer_4;
+    double const & shaded_leaf_temperature_layer_5;
+    double const & shaded_leaf_temperature_layer_6;
+    double const & shaded_leaf_temperature_layer_7;
+    double const & shaded_leaf_temperature_layer_8;
+    double const & shaded_leaf_temperature_layer_9;
+
+    // double const& leaf_temperature;
     double const& soil_temperature_avg;
 
     double const& root_volume;

@@ -108,6 +108,7 @@ parameters =   within(soybean$parameters, {
   mod_leaf_z = 9
   wp_crit = 0.4
   storage_water_frac = 0.8
+  R_soil_root = 1
   R_root_stem = 1
   R_stem_leaf = 1
 })
@@ -265,8 +266,8 @@ legend("topleft", legend = paste("R² =", round(R2, 4)), bty = "n")
 # L3 vs 8in sod
 
 # avg
-#R2 <- 1 - (sum((observed_avg$eight_in_sod - daily_avg_dt$L2)^2)/sum((observed_avg$eight_in_sod - mean(observed_avg$eight_in_sod))^2))
-R2 <- cor(observed_avg$eight_in_sod, daily_avg_dt$L3, method = "pearson")^2
+R2 <- 1 - (sum((observed_avg$eight_in_sod - daily_avg_dt$L2)^2)/sum((observed_avg$eight_in_sod - mean(observed_avg$eight_in_sod))^2))
+#R2 <- cor(observed_avg$eight_in_sod, daily_avg_dt$L3, method = "pearson")^2
 plot(observed_avg$eight_in_sod, daily_avg_dt$L3, xlab='Observed 8in Sod (K)',
      ylab = 'Simulated Layer 3 (K)', main = 'Average 8in Sod vs Layer 3')
 abline(a = 0, b = 1, col = "red", lty = 2)
@@ -289,6 +290,47 @@ abline(a = 0, b = 1, col = "red", lty = 2)
 legend("topleft", legend = paste("R² =", round(R2, 4)), bty = "n")
 
 
+################################################################################################################################
+# plotting temperature in profile
 
+plot(result$time/24, result$soil_temperature_1,
+     type = 'l',
+     lwd = '2',
+     xlab = 'DOY',
+     ylab = 'Soil Temperature (K)',
+     main = 'Soil Temperature in each Soil Layer',
+     col = 'red')
+
+lines(result$time/24, result$soil_temperature_2, col = 'orange', lwd = '2')
+lines(result$time/24, result$soil_temperature_3, col = 'green', lwd = '4')
+lines(result$time/24, result$soil_temperature_4, col = 'blue', lwd = '2')
+
+legend("bottomright", 
+       legend = c("Layer 1", "Layer 2", "Layer 3", "Layer 4"),
+       col = c("red", "orange", "green", "blue"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+################################################################################################################################
+# lag time demonstration
+
+plot(result$time/24, result$soil_temperature_1,
+     type = 'l',
+     lwd = '2',
+     xlim = c(151, 154),
+     xlab = 'DOY',
+     ylab = 'Soil Temperature (K)',
+     main = 'Soil Temperature in each Soil Layer',
+     col = 'red')
+
+lines(result$time/24, result$soil_temperature_2, col = 'orange', lwd = '2')
+lines(result$time/24, result$soil_temperature_3, col = 'green', lwd = '4')
+lines(result$time/24, result$soil_temperature_4, col = 'blue', lwd = '2')
+
+legend("bottomleft", 
+       legend = c("Layer 1", "Layer 2", "Layer 3", "Layer 4"),
+       col = c("red", "orange", "green", "blue"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
 
 

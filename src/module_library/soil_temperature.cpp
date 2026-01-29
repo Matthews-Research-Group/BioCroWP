@@ -122,6 +122,15 @@ void soil_temperature::do_operation() const
         tot_soil_depth += sd_arr[l]; // m
     }
 
+    double tot_soil_depth_arr[] = {
+        sd_arr[0],
+        sd_arr[0] + sd_arr[1],
+        sd_arr[0] + sd_arr[1] + sd_arr[2],
+        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3],
+        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3] + sd_arr[4],
+        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3] + sd_arr[4] + sd_arr[5]
+    };
+
     // Degree of saturation calculated via definitions of porosity and volumetric swc
     std::vector<double> s_r_arr;
     for(int l = 0; l < max_rooting_layer; l++){
@@ -194,7 +203,7 @@ void soil_temperature::do_operation() const
     // amplitude at a given depth (hr)
     std::vector<double> a_z_arr;
     for(int l = 0; l < max_rooting_layer; l++){
-        a_z_arr.push_back(((max_K - min_K)/2)*exp(-sd_arr[l]/d_arr[l])); // K
+        a_z_arr.push_back(((max_K - min_K)/2)*exp(-tot_soil_depth_arr[l]/d_arr[l])); // K
     }
 
     // average daily soil surface temp
@@ -205,7 +214,7 @@ void soil_temperature::do_operation() const
     // lag time = (24hrs/2*pi) x (z/d), from Chu
     std::vector<double> lag_time_arr;
     for(int l = 0; l < max_rooting_layer; l++){
-        lag_time_arr.push_back((24/(2*pi))*(sd_arr[l]/d_arr[l])); // hr
+        lag_time_arr.push_back((24/(2*pi))*(tot_soil_depth_arr[l]/d_arr[l])); // hr
     }
 
     // phase constant aligns the temperature minimum to the actual observed minimum
@@ -217,7 +226,7 @@ void soil_temperature::do_operation() const
     // soil temperature at each soil layer
     std::vector<double> soil_temperature_arr;
     for(int l = 0; l < max_rooting_layer; l++){
-        soil_temperature_arr.push_back(T_a + a_z_arr[l]*sin(w*hour - (sd_arr[l]/d_arr[l]) - phase_arr[l]));
+        soil_temperature_arr.push_back(T_a + a_z_arr[l]*sin(w*hour - (tot_soil_depth_arr[l]/d_arr[l]) - phase_arr[l]));
     }
 
     // averaging soil temp

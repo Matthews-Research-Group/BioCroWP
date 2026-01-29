@@ -8,6 +8,7 @@
 #include "osmotic_potential.h"
 #include "pressure_potential.h"
 #include "total_potential.h"
+#include "total_biomass.h"
 
 creator_map BioCroWP::module_library::library_entries =
 {
@@ -16,5 +17,6 @@ creator_map BioCroWP::module_library::library_entries =
     {"soil_potential", &create_mc<soil_potential>},
     {"osmotic_potential", &create_mc<osmotic_potential>},
     {"pressure_potential", &create_mc<pressure_potential>},
-    {"total_potential", &create_mc<total_potential>}
+    {"total_potential", &create_mc<total_potential>},
+    {"total_biomass", &create_mc<total_biomass>}
 };

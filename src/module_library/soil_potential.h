@@ -74,6 +74,8 @@ class soil_potential : public direct_module
             soil_depth_6{get_input(input_quantities, "soil_depth_6")},
             soil_water_content_6{get_input(input_quantities, "soil_water_content_6")},
 
+            soil_water_content{get_input(input_quantities, "soil_water_content")},
+
             // pointers to output quantities
             soil_potential_1_op{get_op(output_quantities, "soil_potential_1")}, // MPa
             soil_potential_2_op{get_op(output_quantities, "soil_potential_2")},
@@ -82,6 +84,13 @@ class soil_potential : public direct_module
             soil_potential_5_op{get_op(output_quantities, "soil_potential_5")},
             soil_potential_6_op{get_op(output_quantities, "soil_potential_6")},
             soil_potential_avg_op{get_op(output_quantities, "soil_potential_avg")},
+
+            soil_gravitational_potential_1_op{get_op(output_quantities, "soil_gravitational_potential_1")}, // MPa
+            soil_gravitational_potential_2_op{get_op(output_quantities, "soil_gravitational_potential_2")},
+            soil_gravitational_potential_3_op{get_op(output_quantities, "soil_gravitational_potential_3")},
+            soil_gravitational_potential_4_op{get_op(output_quantities, "soil_gravitational_potential_4")},
+            soil_gravitational_potential_5_op{get_op(output_quantities, "soil_gravitational_potential_5")},
+            soil_gravitational_potential_6_op{get_op(output_quantities, "soil_gravitational_potential_6")},
 
             soil_pressure_potential_1_op{get_op(output_quantities, "soil_pressure_potential_1")}, // MPa
             soil_pressure_potential_2_op{get_op(output_quantities, "soil_pressure_potential_2")},
@@ -155,6 +164,8 @@ class soil_potential : public direct_module
     double const& soil_depth_6;
     double const& soil_water_content_6;
 
+    double const& soil_water_content;
+
     // pointers to output quantities
     double* soil_potential_1_op;
     double* soil_potential_2_op;
@@ -163,6 +174,13 @@ class soil_potential : public direct_module
     double* soil_potential_5_op;
     double* soil_potential_6_op;
     double* soil_potential_avg_op;
+
+    double* soil_gravitational_potential_1_op;
+    double* soil_gravitational_potential_2_op;
+    double* soil_gravitational_potential_3_op;
+    double* soil_gravitational_potential_4_op;
+    double* soil_gravitational_potential_5_op;
+    double* soil_gravitational_potential_6_op;
 
     double* soil_pressure_potential_1_op;
     double* soil_pressure_potential_2_op;
