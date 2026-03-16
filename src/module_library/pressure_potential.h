@@ -18,18 +18,9 @@ class pressure_potential : public differential_module
    private:
     // References to input quantities
     double const& canopy_transpiration_rate;
-    // double const& uptake_layer_1;
-    // double const& uptake_layer_2;
-    // double const& uptake_layer_3;
-    // double const& uptake_layer_4;
-    // double const& uptake_layer_5;
-    // double const& uptake_layer_6;
 
-    double const& soil_potential_avg;
-    double const& root_total_potential;
-    double const& stem_total_potential;
-    double const& leaf_total_potential;
-    double const& pods_total_potential;
+    double const& doy;
+    double const& hour;
 
     double const& root_pressure_potential;
     double const& stem_pressure_potential;
@@ -72,10 +63,10 @@ class pressure_potential : public differential_module
 
     double const& wp_crit;
 
-    double const& R_soil_root;
-    double const& R_root_stem;
-    double const& R_stem_leaf;
-    double const& R_stem_pods;
+    double const& F_rwu;
+    double const& F_root_stem;
+    double const& F_stem_leaf;
+    double const& F_stem_pods;
 
     // Pointers to output quantities
     double* root_pressure_potential_op;

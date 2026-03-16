@@ -5,13 +5,19 @@ library(BioCroWater)
 load("C:/Users/natal/OneDrive/Documents/masters/research/data/soybean_weather_wp.rdata")
 weatherData <- merged_soybean_weather$'2005'
 
+weatherData_top <- head(weatherData,600)
+weatherData_slice <- weatherData[601:2600,]
+weatherData_bottom <- weatherData[2601:2952,]
+
 
 direct_modules_soil_water = list("BioCroWater:soil_type_selector", "BioCroWater:soil_surface_runoff",
                                  "BioCroWater:soil_water_downflow", "BioCroWater:soil_water_tiledrain", 
                                  "BioCroWater:soil_water_upflow","BioCroWater:soil_water_uptake",
                                  "BioCroWater:multilayer_soil_profile_avg",
+                                 "BioCroWP:water_flow",
                                  "BioCroWP:soil_temperature",
                                  "BioCroWP:soil_potential",
+                                 "BioCroWP:longitudinal_extensibility_update",
                                  "BioCroWP:osmotic_potential",
                                  "BioCroWP:total_potential",
                                  "BioCroWP:total_biomass")
@@ -22,7 +28,8 @@ direct_modules_new = c(direct_modules_new[1:(old_soil_evapo_index-1)],direct_mod
                        direct_modules_new[old_soil_evapo_index:length(direct_modules_new)]) # insert BioCroWater
 
 differential_modules_soil_water = list("BioCroWater:soil_evaporation","BioCroWater:multi_layer_soil_profile",
-                                       "BioCroWP:pressure_potential")
+                                       "BioCroWP:pressure_potential_senescence"
+                                       )
 differential_modules_new = soybean$differential_modules
 old_soil_profile_index = which(differential_modules_new=="BioCro:two_layer_soil_profile")
 differential_modules_new = differential_modules_new[-old_soil_profile_index] #remove soil_profile
@@ -30,7 +37,7 @@ differential_modules_new = c(differential_modules_new[1:(old_soil_profile_index-
                              differential_modules_soil_water,
                              differential_modules_new[old_soil_profile_index:length(differential_modules_new)])
 
- init_values =   within(soybean$initial_values,{
+init_values =   within(soybean$initial_values,{
   soil_water_content_1 = soybean$initial_values$soil_water_content  #0-5cm
   soil_water_content_2 = soybean$initial_values$soil_water_content  #5-15cm
   soil_water_content_3 = soybean$initial_values$soil_water_content  #15-35cm
@@ -45,18 +52,18 @@ differential_modules_new = c(differential_modules_new[1:(old_soil_profile_index-
   root_water_content = 0 #878.416
   stem_water_content = 0 #6912.2555
   leaf_water_content = 0 #2505.24243
-  pods_volume = 0.0001 #0.000001
-  root_volume = 0.02 #0.00001
-  stem_volume = 0.02 #0.00005
-  leaf_volume = 0.01 #0.00005 # no leaves in initial development stages
-  pods_pressure_potential = -0.5
-  root_pressure_potential = -0.1  # Initial value to be updated
-  stem_pressure_potential = -0.3
-  leaf_pressure_potential = -0.5
-  pods_osmotic_potential = -0.1
-  #root_total_potential = -0.05  # For initial water flow calculation
+  pods_volume = 1 #0.000001
+  root_volume = 1 #0.00001
+  stem_volume = 1 #0.00005
+  leaf_volume = 1 #0.00005 # no leaves in initial development stages
+  root_pressure_potential = 0.3
+  stem_pressure_potential = 0.1
+  leaf_pressure_potential = 0.05
+  pods_pressure_potential = 0.05
+  #root_total_potential = -0.1
   #stem_total_potential = -0.4
   #leaf_total_potential = -0.6
+  #pods_total_potential = -0.6
   leaf_temperature = 298.15
   #soil_temperature_avg = 298.15
   kd = 1
@@ -87,42 +94,139 @@ parameters =   within(soybean$parameters, {
   elevation                   = 219
   bare_soil_albedo            = 0.15
   max_rooting_layer = 4
-  ext_root_x = 0.2 #0.055
-  ext_root_z = 0.8 #0.275
-  ext_stem_x = 0.2 #0.055
-  ext_stem_z = 0.8 #0.275
-  ext_leaf_x = 0.0
-  ext_leaf_y = 0.2 #0.55
-  ext_leaf_z = 0.2 #0.55
-  ext_pods_x = 0.8 #0.2
-  mod_root_x = 28.5 #57
-  mod_root_z = 28.5 #57
-  mod_stem_x = 28.5 #57
-  mod_stem_z = 28.5 #57
-  mod_leaf_x = 4.5 #9
-  mod_leaf_y = 1 #2
-  mod_leaf_z = 4.5 #9
-  mod_pods_x = 4.5 #9
-  wp_crit = 0.4
+  ext_root_x = 0.1#0.55 #0.055, constant
+  ext_root_z_initial = 0.4#1.6 #0.275
+  ext_stem_x = 0.1 #0.75 #0.055, constant
+  ext_stem_z_initial = 0.4 #2.0 #0.275
+  ext_leaf_x = 0   #constant
+  ext_leaf_y_initial = 1#0.75 #0.55
+  ext_leaf_z_initial = 1#0.75 #0.55
+  ext_pods_x_initial = 0.4 #1.5 #0.2
+  mod_root_x = 25 #57
+  mod_root_z = 25#57
+  mod_stem_x = 25#15 #57
+  mod_stem_z = 25#15 #57
+  mod_leaf_x = 5 #9
+  mod_leaf_y = 1 #0.75 #2
+  mod_leaf_z = 5 #2.25 #9
+  mod_pods_x = 5 #2.25 #9
+  wp_crit = 0.40
   storage_water_frac = 0.8
-  R_soil_root = 1
-  R_root_stem = 2
-  R_stem_leaf = 10
-  R_stem_pods = 10
+  R_soil_root = 0.16 #0.0216217167
+  R_root_stem = 0.08  #0.154440833
+  R_stem_leaf = 0.04 #0.0926645
+  R_stem_pods = 0.08 #0.0926645
   #soil_temperature_avg = 298.15
+  t_root_m = 0.0
+  t_root_e = 1.0
+  t_stem_m = 1.0
+  t_stem_e = 2.0
+  t_leaf_m = 1.0
+  t_leaf_e = 2.0
+  t_pods_m = 1.75
+  t_pods_e = 2.5
 })
 parameters[c('soil_field_capacity','soil_saturated_conductivity','soil_saturation_capacity','soil_wilting_point')]=NULL
 parameters[c('kShell','net_assimilation_rate_shell')] = NULL
 
+sim_start <- Sys.time()
 result <- run_biocro(
   init_values,
   parameters,
   weatherData,
   direct_modules_new,
-  differential_modules_new
+  differential_modules_new,
+  ode_solver=list(type ="boost_rosenbrock",
+                  output_step_size = 1.0,
+                  adaptive_rel_error_tol = 1e-2, #1e-4 try increasing or decreasing
+                  adaptive_abs_error_tol = 1e-2, #1e-4
+                  adaptive_max_steps = 50)
 )
+sim_end <- Sys.time()
+sim_time = sim_end - sim_start
+cat('Simulation Time:', sim_time, 'min')
 
 
+
+############################################################################################################
+# Debug block
+
+# pressure potential check
+par(mfrow = c(1, 1))
+
+plot(result$time/24, result$root_pressure_potential, col='red',
+     ylim=c(-1.0,1.0),
+     main='Model Crash Debug- Pressure Potential',
+     xlab = 'DOY',
+     ylab= 'Pressure Potential (MPa)')
+points(result$time/24, result$stem_pressure_potential, col='orange')
+points(result$time/24, result$leaf_pressure_potential, col='green')
+points(result$time/24, result$pods_pressure_potential, col='black')
+
+legend("bottomleft", 
+       legend = c("Root", "Stem", "Leaf", "Pod"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2),
+       lty = c(1, 1, 1, 1))
+
+# organ flow check
+plot(result$time/24, result$F_rwu, col='red',
+     ylim=c(-1000000,3000000),
+     #ylim = c(0,20000),
+     main='Model Crash Debug- Organ Flows',
+     xlab = 'DOY',
+     ylab= 'Water Flow (g ha-1 hr-1)')
+points(result$time/24, result$F_root_stem, col='orange')
+points(result$time/24, result$F_stem_leaf, col='green')
+points(result$time/24, result$F_stem_pods, col='black')
+
+legend("topleft", 
+       legend = c("F_rwu", "F_rs", "F_sl", "F_sp"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+# water content check
+par(mfrow = c(2, 2))
+
+plot(result$time/24, result$root_water_content, col='blue',
+     main="Root",
+     xlab='DOY',
+     ylab='Root Water Content (g)')
+plot(result$time/24, result$stem_water_content, col='blue',
+     main="Stem",
+     xlab='DOY',
+     ylab='Stem Water Content (g)')
+plot(result$time/24, result$leaf_water_content, col='blue',
+     main="Leaf",
+     xlab='DOY',
+     ylab='Leaf Water Content (g)')
+plot(result$time/24, result$pods_water_content, col='blue',
+     main="Pod",
+     xlab='DOY',
+     ylab='Pod Water Content (g)')
+
+par(mfrow = c(1, 1))
+
+# total potential check
+plot(result$time/24, result$root_total_potential, col='red',
+     ylim=c(-1.2,0),
+     main='Model Crash Debug- Total Potential',
+     xlab = 'DOY',
+     ylab= 'Total Potential (MPa)')
+points(result$time/24, result$stem_total_potential, col='orange')
+points(result$time/24, result$leaf_total_potential, col='green')
+points(result$time/24, result$pods_total_potential, col='black')
+
+legend("topright", 
+       legend = c("Root", "Stem", "Leaf", "Pod"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2),
+       lty = c(1, 1, 1, 1))
+
+length(result$time)
+
+############################################################################################################
 ###############################################################################################################################
 plot(result$time/24, result$root_total_potential,
      type='p', col = 'red',
@@ -140,6 +244,25 @@ points(result$time/24, result$pods_total_potential, col = 'black')
 legend("bottomright", 
        legend = c("Soil", "Root", "Stem", "Leaf", "Pod"),
        col = c("blue", "red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+plot(result$time[2000:2048]/24, result$root_total_potential[2000:2048],
+     type='p', col = 'red',
+     #xlim = c(result$doy[0], result$doy[length(result$doy)]),
+     ylim = c(-0.9,-0.5),
+     xlab = 'DOY',
+     ylab = 'Potential (MPa)',
+     main = 'Total Potential: DOY 230-232')
+
+points(result$time[2000:2048]/24, result$stem_total_potential[2000:2048], col = 'orange')
+points(result$time[2000:2048]/24, result$leaf_total_potential[2000:2048], col = 'green')
+points(result$time[2000:2048]/24, result$pods_total_potential[2000:2048], col = 'black')
+#points(result$time[2000:2048]/24, result$soil_potential_avg[2000:2048], col = 'blue')
+
+legend("bottomright", 
+       legend = c("Root", "Stem", "Leaf", "Pod"),
+       col = c("red", "orange", "green", "black"),
        lwd = c(2, 2, 2, 2, 2),
        lty = c(1, 1, 1, 1, 1))
 
@@ -177,38 +300,152 @@ plot(result$time/24, result$pods_total_potential,
 ############################################################################################################
 # organ volume and wc (split)
 
-plot(result$time, result$root_water_content, col='blue',
-     main="Root Water Content and Volume over Growing Season")
-points(result$time, result$root_volume, col='green')
+par(mfrow = c(2, 2))
 
-plot(result$time, result$stem_water_content, col='blue',
-     main="stem Water Content and Volume over Growing Season")
-points(result$time, result$stem_volume, col='green')
+plot(result$time[2000:2048]/24, result$root_water_content[2000:2048], col='blue',
+     main="Root",
+     xlab='DOY',
+     ylab='Root Water Content (g)')
+plot(result$time[2000:2048]/24, result$stem_water_content[2000:2048], col='blue',
+     main="Stem",
+     xlab='DOY',
+     ylab='Stem Water Content (g)')
+plot(result$time[2000:2048]/24, result$leaf_water_content[2000:2048], col='blue',
+     main="Leaf",
+     xlab='DOY',
+     ylab='Leaf Water Content (g)')
+plot(result$time[2000:2048]/24, result$pods_water_content[2000:2048], col='blue',
+     main="Pod",
+     xlab='DOY',
+     ylab='Pod Water Content (g)')
 
-plot(result$time, result$leaf_water_content, col='blue',
-     main="leaf Water Content and Volume over Growing Season")
-points(result$time, result$leaf_volume, col='green')
+par(mfrow = c(1, 1))
 
-plot(result$time, result$pods_water_content, col='blue',
-     main="pods Water Content and Volume over Growing Season")
-points(result$time, result$pods_volume, col='green')
+plot(result$time/24, result$root_water_content, col='blue',
+     main="Root Water Content and Volume over Growing Season",
+     xlab='DOY',
+     ylab='Root Water Content (g)')
 
-plot(result$time, result$root_volume)
-plot(result$time, result$stem_volume)
-plot(result$time, result$leaf_volume)
-plot(result$time, result$pods_volume)
+plot(result$time/24, result$stem_water_content, col='blue',
+     main="Stem Water Content and Volume over Growing Season",
+     xlab='DOY',
+     ylab='Stem Water Content (g)')
+
+plot(result$time/24, result$leaf_water_content, col='blue',
+     main="Leaf Water Content and Volume over Growing Season",
+     xlab='DOY',
+     ylab='Leaf Water Content (g)')
+
+plot(result$time/24, result$pods_water_content, col='blue',
+     main="Pod Water Content and Volume over Growing Season",
+     xlab='DOY',
+     ylab='Pod Water Content (g)')
+
+plot(result$time/24, weatherData$precip)
+
+plot(result$time/24, result$root_water_content,
+     #ylim=c(-1,1),
+     main="Water Content in Stem, Leaf, and Pods",
+     xlab="DOY",
+     ylab="Pressure Potential (MPa)",
+     col='black')
+points(result$time/24, result$stem_water_content, col='orange')
+points(result$time/24, result$leaf_water_content, col='green')
+points(result$time/24, result$pods_water_content, col='red')
+
+legend("topleft", 
+       legend = c("Stem", "Leaf", "Pod"),
+       col = c("orange", "green", "black"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+plot(result$time, weatherData$precip)
+
+plot(result$time[2000:2048], result$canopy_transpiration_rate[2000:2048],
+     main='Canopy Transpiration Rate- 48 hr period',
+     ylab='Canopy Transpiration Rate',
+     xlab='Time')
+plot(result$time[2000:2048], result$leaf_total_potential[2000:2048],
+     main='Leaf Total Potential- 48 hr period',
+     ylab='Leaf Total Potential (MPa)',
+     xlab='Time')
+plot(result$time[2000:2048], result$leaf_osmotic_potential[2000:2048],
+     main='Leaf Osmotic Potential- 48 hr period',
+     ylab='Leaf Osmotic Potential (MPa)',
+     xlab='Time')
+plot(result$time[2000:2048], result$leaf_pressure_potential[2000:2048],
+     main='Leaf Pressure Potential- 48 hr period',
+     ylab='Leaf Pressure Potential (MPa)',
+     xlab='Time')
+plot(result$time[2000:2048], result$leaf_water_content[2000:2048],
+     main='Leaf Water Content- 48 hr period',
+     ylab='Leaf Water Content (g)',
+     xlab='Time')
+plot(result$time[2000:2048], result$leaf_volume[2000:2048],
+     main='Leaf Volume- 48 hr period',
+     ylab='Leaf Volume (m3)',
+     xlab='Time')
+
+#plot(result$time, result$pods_water_content, col='blue',
+#     main="pods Water Content and Volume over Growing Season")
+#points(result$time, result$pods_volume, col='green')
+
+par(mfrow = c(2, 2))
+
+plot(result$time/24, result$root_volume, col='green',
+     main='Root',
+     xlab='DOY',
+     ylab='Volume (m3)')
+plot(result$time/24, result$stem_volume, col='green',
+     main='Stem',
+     xlab='DOY',
+     ylab='Volume (m3)')
+plot(result$time/24, result$leaf_volume, col='green',
+     main='Leaf',
+     xlab='DOY',
+     ylab='Volume (m3)')
+plot(result$time/24, result$pods_volume, col='green',
+     main='Pod',
+     xlab='DOY',
+     ylab='Volume (m3)')
+
+par(mfrow = c(1, 1))
+
+plot(result$time/24, result$root_volume, col='green',
+     main='Root Volume over Growing Season (m3)',
+     xlab='DOY')
+plot(result$time/24, result$stem_volume, col='green',
+     main='Stem Volume over Growing Season (m3)',
+     xlab='DOY')
+plot(result$time/24, result$leaf_volume, col='green',
+     main='Leaf Volume over Growing Season (m3)',
+     xlab='DOY')
+plot(result$time/24, result$pods_volume, col='green',
+     main='Pod Volume over Growing Season (m3)',
+     xlab='DOY')
+
+plot(result$time, result$Root)
+plot(result$time, result$Stem)
+plot(result$time, result$Leaf)
+plot(result$time, result$Grain)
 
 ############################################################################################################
 
 # splitting into osmotic and pressure components
 
-plot(result$time/24, result$root_pressure_potential,
+plot(result$time/24, result$root_total_potential,
      type='p', col = 'red',
-     #ylim=c(-1,1),
+     ylim=c(-0.8,0.1),
      xlab = 'DOY',
-     ylab = 'Potential (MPa)',
-     main = 'Root Pressure Potential over Growing Season')
-points(result$time/24, result$root_osmotic_potential, col='blue')
+     ylab = 'Total Potential (MPa)',
+     main = 'Potential over Growing Season- Soil Potential Sensitivity')
+points(result$time/24, result$soil_potential_avg, col='blue')
+legend("bottomleft",
+       legend=c("Root", "Soil"),
+       col = c("red", 'blue'),
+       lwd = c(2, 2),
+       lty = c(1, 1)
+       )
 
 plot(result$time/24, result$stem_pressure_potential,
      type='p', col = 'orange',
@@ -232,33 +469,60 @@ plot(result$time/24, result$pods_pressure_potential,
      xlab = 'DOY',
      ylab = 'Potential (MPa)',
      main = 'Pod Pressure Potential over Growing Season')
+points(result$time/24, result$pods_osmotic_potential)
 
-plot(result$time, result$soil_potential_avg,
+plot(result$time/24, result$root_pressure_potential,
      ylim=c(-1,1),
-     main="Total Soil Potential and Pressure Potential in Organs",
-     col='blue')
-points(result$time, result$root_pressure_potential, col='red')
-points(result$time, result$stem_pressure_potential, col='orange')
-points(result$time, result$leaf_pressure_potential, col='green')
-points(result$time, result$pods_pressure_potential, col='black')
+     main="Total Pressure Potential in Organs",
+     xlab="DOY",
+     ylab="Pressure Potential (MPa)",
+     col='red')
+points(result$time/24, result$stem_pressure_potential, col='orange')
+points(result$time/24, result$leaf_pressure_potential, col='green')
+points(result$time/24, result$pods_pressure_potential, col='black')
+points(result$time/24, result$soil_potential_avg, col='blue')
 
 legend("bottomright", 
-       legend = c("Soil", "Root", "Stem", "Leaf", "Pod"),
-       col = c("blue", "red", "orange", "green", "black"),
+       legend = c("Root", "Stem", "Leaf", "Pod"),
+       col = c("red", "orange", "green", "black"),
        lwd = c(2, 2, 2, 2, 2),
        lty = c(1, 1, 1, 1, 1))
 
-############################################################################################################
+plot(result$time[2000:2048]/24, result$root_pressure_potential[2000:2048],
+     ylim=c(0.0,0.4),
+     main="Pressure Potential in Organs: DOY 230-232",
+     xlab="DOY",
+     ylab="Pressure Potential (MPa)",
+     col='red')
+points(result$time[2000:2048]/24, result$stem_pressure_potential[2000:2048], col='orange')
+points(result$time[2000:2048]/24, result$leaf_pressure_potential[2000:2048], col='green')
+points(result$time[2000:2048]/24, result$pods_pressure_potential[2000:2048], col='black')
 
+legend("bottomright", 
+       legend = c("Root", "Stem", "Leaf", "Pod", "Soil"),
+       col = c("red", "orange", "green", "black", "blue"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+plot(result$time/24, result$canopy_transpiration_rate,
+     main='Canopy Transpiration Rate over Growing Season',
+     ylab='Canopy Transpiration Rate (Mg ha-1 hr-1)',
+     xlab = 'DOY')
+
+############################################################################################################
+# Osmotic Potential Debug
+plot(result$time/24, -0.003036*result$soil_temperature_avg)
 plot(result$time, result$root_osmotic_potential)
 plot(result$time, result$soil_temperature_avg)
+
 plot(result$time, result$stem_osmotic_potential)
+
 plot(result$time, result$leaf_osmotic_potential)
+plot(result$time, -0.003036*leaf_temperature_plot)
+
 plot(result$time, result$pods_osmotic_potential)
 
 ############################################################################################################
-
-plot(result$time, result$soil_temperature_avg)
 
 sunlit_avg = (result$sunlit_leaf_temperature_layer_0 +
                 result$sunlit_leaf_temperature_layer_1 +
@@ -284,5 +548,393 @@ shaded_avg = (result$shaded_leaf_temperature_layer_0 +
 
 leaf_temperature_plot = 273.15 + (sunlit_avg + shaded_avg)/2
 
-plot(result$time, leaf_temperature_plot, col='green')
-points(result$time, result$soil_temperature_avg, col='red')
+############################################################################################################
+
+plot(result$time/24, result$F_rwu, col = 'red', 
+     main = "Root Water Uptake",
+     xlab='DOY',
+     ylab='Flow (g ha-1 hr-1)')
+plot(result$time/24, result$F_root_stem, col = 'orange',
+     main = "Root-Stem Flow",
+     xlab='DOY',
+     ylab='Flow (g ha-1 hr-1)')
+plot(result$time/24, result$F_stem_leaf, col = 'green',
+     main = "Stem-Leaves Flow",
+     xlab='DOY',
+     ylab='Flow (g ha-1 hr-1)')
+#points(result$time/24, result$leaf_temperature_plot)
+plot(result$time/24, result$F_stem_pods, col = 'black',
+     main = "Stem-Pods Flow",
+     xlab='DOY',
+     ylab='Flow (g ha-1 hr-1)')
+plot(result$time, (10^6)*result$canopy_transpiration_rate,
+     main='Canopy Transpiration Rate (g ha-1 hr-1)')
+
+plot(result$time/24, result$F_rwu,
+     ylim=c(-1,200000),
+     main="Water Flow Between Organs",
+     xlab="DOY",
+     ylab="Pressure Potential (MPa)",
+     col='red')
+points(result$time/24, result$F_root_stem, col='orange')
+points(result$time/24, result$F_stem_leaf, col='green')
+points(result$time/24, result$F_stem_pods, col='black')
+
+legend("topright", 
+       legend = c("F_rwu", "F_rs", "F_sl", "F_sp"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+# same plot, smaller time scale
+plot(result$time[1500:1600]/24, result$F_rwu[1500:1600],
+     ylim=c(0,110000),
+     main="Water Flow Between Organs",
+     xlab="DOY",
+     ylab="Pressure Potential (MPa)",
+     col='red')
+points(result$time[1500:1600]/24, result$F_root_stem[1500:1600], col='orange')
+points(result$time[1500:1600]/24, result$F_stem_leaf[1500:1600], col='green')
+points(result$time[1500:1600]/24, result$F_stem_pods[1500:1600], col='black')
+
+legend("topright", 
+       legend = c("F_rwu", "F_rs", "F_sl", "F_sp"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+plot(result$time/24, 370658*(result$root_total_potential - result$stem_total_potential)/parameters$R_root_stem,
+     main='Expected Root-Stem Flow',
+     xlab='DOY',
+     ylab='Flow (g ha-1 hr-1)')
+
+############################################################################################################
+
+plot(result$time/24, result$root_osmotic_potential,
+     type='p', col = 'red',
+     xlab = 'DOY',
+     ylab = 'Osmotic Potential (MPa)',
+     main = 'Root Osmotic Potential over Growing Season')
+
+plot(result$time/24, result$stem_osmotic_potential,
+     type='p', col = 'orange',
+     xlab = 'DOY',
+     ylab = 'Osmotic Potential (MPa)',
+     main = 'Stem Osmotic Potential over Growing Season')
+
+plot(result$time/24, result$leaf_osmotic_potential,
+     type='p', col = 'green',
+     xlab = 'DOY',
+     ylab = 'Osmotic Potential (MPa)',
+     main = 'Leaf Osmotic Potential over Growing Season')
+
+plot(result$time/24, result$pods_osmotic_potential,
+     type='p', col = 'black',
+     xlab = 'DOY',
+     ylab = 'Osmotic Potential (MPa)',
+     main = 'Pod Osmotic Potential over Growing Season')
+
+############################################################################################################
+# Debug block
+
+# pressure potential check
+par(mfrow = c(1, 1))
+
+plot(result$time/24, result$root_pressure_potential, col='red',
+     ylim=c(-1.0,1.0),
+     main='Model Crash Debug- Pressure Potential',
+     xlab = 'DOY',
+     ylab= 'Pressure Potential (MPa)')
+points(result$time/24, result$stem_pressure_potential, col='orange')
+points(result$time/24, result$leaf_pressure_potential, col='green')
+points(result$time/24, result$pods_pressure_potential, col='black')
+
+legend("bottomleft", 
+       legend = c("Root", "Stem", "Leaf", "Pod"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2),
+       lty = c(1, 1, 1, 1))
+
+# organ flow check
+plot(result$time/24, result$F_rwu, col='red',
+     ylim=c(-1000000,3000000),
+     #ylim = c(0,20000),
+     main='Model Crash Debug- Organ Flows',
+     xlab = 'DOY',
+     ylab= 'Water Flow (g ha-1 hr-1)')
+points(result$time/24, result$F_root_stem, col='orange')
+points(result$time/24, result$F_stem_leaf, col='green')
+points(result$time/24, result$F_stem_pods, col='black')
+
+legend("bottomleft", 
+       legend = c("F_rwu", "F_rs", "F_sl", "F_sp"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+# water content check
+par(mfrow = c(2, 2))
+
+plot(result$time/24, result$root_water_content, col='blue',
+     main="Root",
+     xlab='DOY',
+     ylab='Root Water Content (g)')
+plot(result$time/24, result$stem_water_content, col='blue',
+     main="Stem",
+     xlab='DOY',
+     ylab='Stem Water Content (g)')
+plot(result$time/24, result$leaf_water_content, col='blue',
+     main="Leaf",
+     xlab='DOY',
+     ylab='Leaf Water Content (g)')
+plot(result$time/24, result$pods_water_content, col='blue',
+     main="Pod",
+     xlab='DOY',
+     ylab='Pod Water Content (g)')
+
+par(mfrow = c(1, 1))
+
+# total potential check
+plot(result$time/24, result$root_total_potential, col='red',
+     ylim=c(-1.2,0),
+     main='Model Crash Debug- Total Potential',
+     xlab = 'DOY',
+     ylab= 'Total Potential (MPa)')
+points(result$time/24, result$stem_total_potential, col='orange')
+points(result$time/24, result$leaf_total_potential, col='green')
+points(result$time/24, result$pods_total_potential, col='black')
+
+legend("topright", 
+       legend = c("Root", "Stem", "Leaf", "Pod"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2),
+       lty = c(1, 1, 1, 1))
+
+length(result$time)
+
+############################################################################################################
+# wet and dry biomass comparison
+
+# roots
+par(mfrow = c(1, 2))
+
+plot(result$time/24, result$root_water_content, col='blue',
+     main="Root Water Content",
+     xlab='DOY',
+     ylab='Root Water Content (g)')
+plot(result$time/24, result$Root, col='green',
+     main="Root Dry Biomass",
+     xlab='DOY',
+     ylab='Root Mass (g)')
+
+# stem
+
+plot(result$time/24, result$stem_water_content, col='blue',
+     main="Stem Water Content",
+     xlab='DOY',
+     ylab='Stem Water Content (g)')
+plot(result$time/24, result$Stem, col='green',
+     main="Stem Dry Biomass",
+     xlab='DOY',
+     ylab='Stem Mass (g)')
+
+
+# leaf
+
+plot(result$time/24, result$leaf_water_content, col='blue',
+     main="Leaf Water Content",
+     xlab='DOY',
+     ylab='Leaf Water Content (g)')
+plot(result$time/24, result$Leaf, col='green',
+     main="Leaf Dry Biomass",
+     xlab='DOY',
+     ylab='Leaf Mass (g)')
+
+# pod
+
+plot(result$time/24, result$pods_water_content, col='blue',
+     main="Pod Water Content",
+     xlab='DOY',
+     ylab='Pod Water Content (g)')
+plot(result$time/24, result$Grain, col='green',
+     main="Pods Dry Biomass",
+     xlab='DOY',
+     ylab='Pods Mass (g)')
+
+par(mfrow = c(1, 1))
+
+
+# plotting dry biomass and expected dry biomass from simulated wet biomass
+# wet biomass makes up approximately 88% of the biomass
+expected_wet_root = (result$Root)*7.333*10^6
+expected_wet_stem = (result$Stem)*7.333*10^6
+expected_wet_leaf = (result$Leaf)*7.333*10^6
+expected_wet_pods = (result$Grain)*7.333*10^6
+
+
+plot(result$time/24, expected_wet_root, ylim = c(0, 300000000),
+     main = 'Root', col = 'green')
+points(result$time/24, result$root_water_content, col = 'blue')
+
+legend("topleft",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, expected_wet_stem, ylim = c(0, 40000000),
+     main = 'Stem', col = 'green')
+points(result$time/24, result$stem_water_content, col = 'blue')
+
+legend("bottomright",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, expected_wet_leaf, ylim = c(0, 400000000),
+     main = 'Leaf', col = 'green')
+points(result$time/24, result$leaf_water_content, col = 'blue')
+
+legend("topleft",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, expected_wet_pods, ylim = c(0, 100000000),
+     main = 'Grain', col = 'green')
+points(result$time/24, result$pods_water_content, col = 'blue')
+
+legend("bottomright",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+
+############################################################################################################
+
+# zooming in on problematic period: D)Y 245-256
+# slow down occurs during this period in peak sunlight hours
+plot(result$time[2088:2808]/24, result$root_pressure_potential[2088:2808], col='red',
+     ylim=c(-0.3,0.45),
+     main='Problematic Period- Pressure Potential',
+     xlab = 'DOY',
+     ylab= 'Pressure Potential (MPa)')
+points(result$time[2088:2808]/24, result$stem_pressure_potential[2088:2808], col='orange')
+points(result$time[2088:2808]/24, result$leaf_pressure_potential[2088:2808], col='green')
+points(result$time[2088:2808]/24, result$pods_pressure_potential[2088:2808], col='black')
+
+legend("topleft", 
+       legend = c("Root", "Stem", "Leaf", "Pod", "Soil"),
+       col = c("red", "orange", "green", "black", "blue"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+# organ flow check
+plot(result$time[2088:2808]/24, result$F_rwu[2088:2808], col='red',
+     ylim=c(0,2000000),
+     main='Problematic Period- Organ Flows',
+     xlab = 'DOY',
+     ylab= 'Water Flow (g ha-1 hr-1)')
+points(result$time[2088:2808]/24, result$F_root_stem[2088:2808], col='orange')
+points(result$time[2088:2808]/24, result$F_stem_leaf[2088:2808], col='green')
+points(result$time[2088:2808]/24, result$F_stem_pods[2088:2808], col='black')
+
+legend("topleft", 
+       legend = c("F_rwu", "F_rs", "F_sl", "F_sp"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+# water content check
+par(mfrow = c(2, 2))
+
+plot(result$time[2088:2808]/24, result$root_water_content[2088:2808], col='blue',
+     main="Root",
+     xlab='DOY',
+     ylab='Root Water Content (g)')
+plot(result$time[2088:2808]/24, result$stem_water_content[2088:2808], col='blue',
+     main="Stem",
+     xlab='DOY',
+     ylab='Stem Water Content (g)')
+plot(result$time[2088:2808]/24, result$leaf_water_content[2088:2808], col='blue',
+     main="Leaf",
+     xlab='DOY',
+     ylab='Leaf Water Content (g)')
+plot(result$time[2088:2808]/24, result$pods_water_content[2088:2808], col='blue',
+     main="Pod",
+     xlab='DOY',
+     ylab='Pod Water Content (g)')
+
+par(mfrow = c(1, 1))
+
+# total potential check
+plot(result$time[2088:2808]/24, result$root_total_potential[2088:2808], col='red',
+     ylim=c(-1,0),
+     main='Problematic Period- Total Potential',
+     xlab = 'DOY',
+     ylab= 'Total Potential (MPa)')
+points(result$time[2088:2808]/24, result$stem_total_potential[2088:2808], col='orange')
+points(result$time[2088:2808]/24, result$leaf_total_potential[2088:2808], col='green')
+points(result$time[2088:2808]/24, result$pods_total_potential[2088:2808], col='black')
+
+legend("topleft", 
+       legend = c("Root", "Stem", "Leaf", "Pod", "Soil"),
+       col = c("red", "orange", "green", "black", "blue"),
+       lwd = c(2, 2, 2, 2, 2),
+       lty = c(1, 1, 1, 1, 1))
+
+plot(result$time[2088:2808]/24, result$precip[2088:2808],
+     main = "precipitation during problematic period")
+plot(result$time[2088:2808]/24, result$canopy_transpiration_rate[2088:2808],
+     main = "canopy transpiration rate during problematic period")
+plot(result$time[2088:2808]/24, result$soil_potential_avg[2088:2808],
+     main = "soil potential average during problematic period")
+
+
+############################################################################################################
+# determination of organ halfway and endpoint growth times in GDD
+
+# Root
+# I don't think we can assume thermal time for the root is the same as it is in other organs
+# Calculate root thermal time using soil temperature?
+# assuming growth stops when carbon allocation reaches a certain threshold
+i_end_root <- which(result$kRoot < 0.005)[1] # index at which growth ends
+t_end_root <- result$TTc[i_end_root] # end point of root growth period
+t_middle_root <- t_end_root/2 # halfway point of root growth period
+
+#i_middle_root <- which.min(abs(result$TTc - target_t_root)) # finding index of thermal time closest to halfway point
+#t_middle_root <- result$TTc[i_middle_root]
+
+# Stem
+i_end_stem <- which(result$kStem[1500:length(result$kStem)] < 0.005)[1] + 1500
+t_end_stem <- result$TTc[i_end_stem]
+t_middle_stem <- t_end_stem/2
+
+# Leaf
+i_end_leaf <- which(result$kLeaf[1000:length(result$kLeaf)] < 0.005)[1] + 1000
+t_end_leaf <- result$TTc[i_end_leaf]
+t_middle_leaf <- t_end_leaf/2
+
+# Grain
+grain_growth_start <- which(result$kGrain > 0.005)[1]
+t_end_grain <- result$TTc[length(result$TTc)] - result$TTc[grain_growth_start] # end thermal time = end of season tt - grain start tt
+t_middle_grain <- t_end_grain/2
+
+############################################################################################################
+# checking extensibility
+plot(result$time/24, result$DVI)
+
+plot(result$DVI, result$ext_root_z)
+plot(result$DVI, result$ext_stem_z)
+plot(result$DVI, result$ext_leaf_y)
+plot(result$DVI, result$ext_leaf_z)
+plot(result$DVI, result$ext_pods_x)
+
+plot(result$time, result$ext_root_z)
+plot(result$DVI, result$ext_stem_z)
+plot(result$DVI, result$ext_leaf_y)
+plot(result$DVI, result$ext_leaf_z)
+plot(result$DVI, result$ext_pods_x)

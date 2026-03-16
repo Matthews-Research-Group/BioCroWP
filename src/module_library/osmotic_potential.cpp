@@ -34,6 +34,7 @@ string_vector osmotic_potential::get_inputs()
         "root_volume",                    // m3
         "stem_volume", 
         "leaf_volume",
+        "pods_volume",
         
         "storage_water_frac",             // dimensionless
     };
@@ -44,7 +45,8 @@ string_vector osmotic_potential::get_outputs()
     return {
         "root_osmotic_potential",         // MPa
         "stem_osmotic_potential",
-        "leaf_osmotic_potential"
+        "leaf_osmotic_potential",
+        "pods_osmotic_potential"
     };
 }
 
@@ -61,7 +63,7 @@ void osmotic_potential::do_operation() const
             shaded_leaf_temperature_layer_5 + shaded_leaf_temperature_layer_6 + shaded_leaf_temperature_layer_7 +
             shaded_leaf_temperature_layer_8 + shaded_leaf_temperature_layer_9)/10;
 
-    double leaf_temperature = (sunlit_avg + shaded_avg)/2;
+    double leaf_temperature = 273.15 + (sunlit_avg + shaded_avg)/2;
 
     //double storage_water_frac = 0.8;
     double M_sucrose = 342.3; // molar mass of sucrose (g/mol)
@@ -70,16 +72,20 @@ void osmotic_potential::do_operation() const
     double m_sucrose_root = 0.1 * root_volume; // Update later to use partioning fraction from Ximin
     double m_sucrose_stem = 0.1 * stem_volume; // Total sugar mass in plant organ (g)
     double m_sucrose_leaf = 0.1 * leaf_volume; // Current eqn is from Coussement et al. (2018)
+    double m_sucrose_pods = 0.1 * pods_volume;
 
     double root_storage_water = storage_water_frac * root_volume; // m3
     double stem_storage_water = storage_water_frac * stem_volume;
     double leaf_storage_water = storage_water_frac * leaf_volume;
+    double pods_storage_water = storage_water_frac * pods_volume;
 
     double root_osmotic_potential_new = (-R*soil_temperature_avg*m_sucrose_root)/(root_storage_water*M_sucrose); // Dividing by 1000 so values are reported in MPa
     double stem_osmotic_potential_new = (-R*leaf_temperature*m_sucrose_stem)/(stem_storage_water*M_sucrose);
     double leaf_osmotic_potential_new = (-R*leaf_temperature*m_sucrose_leaf)/(leaf_storage_water*M_sucrose);
+    double pods_osmotic_potential_new = (-R*leaf_temperature*m_sucrose_pods)/(pods_storage_water*M_sucrose);
 
     update(root_osmotic_potential_op, root_osmotic_potential_new);
     update(stem_osmotic_potential_op, stem_osmotic_potential_new);
     update(leaf_osmotic_potential_op, leaf_osmotic_potential_new);
+    update(pods_osmotic_potential_op, pods_osmotic_potential_new);
 }

@@ -47,13 +47,15 @@ class osmotic_potential : public direct_module
           root_volume{get_input(input_quantities, "root_volume")}, // Initial volume of organ, m3
           stem_volume{get_input(input_quantities, "stem_volume")},
           leaf_volume{get_input(input_quantities, "leaf_volume")},
+          pods_volume{get_input(input_quantities, "pods_volume")},
 
           storage_water_frac{get_input(input_quantities, "storage_water_frac")},
 
           // Get pointers to output quantities
           stem_osmotic_potential_op{get_op(output_quantities, "stem_osmotic_potential")},
           leaf_osmotic_potential_op{get_op(output_quantities, "leaf_osmotic_potential")},
-          root_osmotic_potential_op{get_op(output_quantities, "root_osmotic_potential")}    {
+          root_osmotic_potential_op{get_op(output_quantities, "root_osmotic_potential")},
+          pods_osmotic_potential_op{get_op(output_quantities, "pods_osmotic_potential")}    {
     }
     static string_vector get_inputs();
     static string_vector get_outputs();
@@ -89,6 +91,7 @@ class osmotic_potential : public direct_module
     double const& root_volume;
     double const& stem_volume;
     double const& leaf_volume;
+    double const& pods_volume;
 
     double const& storage_water_frac;
 
@@ -96,6 +99,7 @@ class osmotic_potential : public direct_module
     double* stem_osmotic_potential_op;
     double* leaf_osmotic_potential_op;
     double* root_osmotic_potential_op;
+    double* pods_osmotic_potential_op;
 
     // Main operation
     void do_operation() const;

@@ -225,8 +225,12 @@ void soil_temperature::do_operation() const
 
     // soil temperature at each soil layer
     std::vector<double> soil_temperature_arr;
+    double T_i0 = T_a; // air temperature or soil temperature at previous layer
+    double T_i = 0; // soil temperature at current layer
     for(int l = 0; l < max_rooting_layer; l++){
-        soil_temperature_arr.push_back(T_a + a_z_arr[l]*sin(w*hour - (tot_soil_depth_arr[l]/d_arr[l]) - phase_arr[l]));
+        T_i = T_i0 + a_z_arr[l]*sin(w*hour - (tot_soil_depth_arr[l]/d_arr[l]) - phase_arr[l]); // soil temperature at layer i
+        soil_temperature_arr.push_back(T_i);
+        T_i0 = T_i; 
     }
 
     // averaging soil temp
