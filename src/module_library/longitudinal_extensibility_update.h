@@ -154,8 +154,7 @@ void longitudinal_extensibility_update::do_operation() const
   if (kRoot < 0.005) { // organ is not growing, keep extensibility 0
     ext_root_z_update = 0;
   } else if (kRoot >= 0.005 && Root >= 0.01 && DVI <= t_root_e) { // root is growing and development index is below endpoint, change ext
-    ext_root_z_update = ext_root_z_initial*(1 - (1 + ((t_root_e - DVI)/(t_root_e - t_root_m)))
-                                                *pow((DVI/t_root_e), (t_root_e/(t_root_e - t_root_m))));
+    ext_root_z_update = ext_root_z_initial*pow((DVI + 1),3);
   }
   
 
@@ -165,10 +164,9 @@ void longitudinal_extensibility_update::do_operation() const
   // double t_stem_e = 2.0;
   double ext_stem_z_update = 0;
   if (kStem < 0.005) { // if organ is not growing extensibility is 0
-    double ext_stem_z_update = 0;
-  } else if (kStem >= 0.005 && Stem >= 0.01 && DVI <= t_stem_e) { // if organ is growing calculate extensibility
-    ext_stem_z_update = ext_stem_z_initial*(1 - (1 + ((t_stem_e - DVI)/(t_stem_e - t_stem_m)))
-                                                  *pow((DVI/t_stem_e), (t_stem_e/(t_stem_e - t_stem_m))));
+    ext_stem_z_update = 0;
+  } else if (kStem >= 0.005 && DVI <= t_stem_e) { // if organ is growing calculate extensibility
+    ext_stem_z_update = ext_stem_z_initial*pow((DVI),3);
 
   }
 
@@ -177,11 +175,9 @@ void longitudinal_extensibility_update::do_operation() const
   if (kLeaf < 0.005) {
     ext_leaf_y_update = 0;
     ext_leaf_z_update = 0;
-  } else if (kLeaf >= 0.005 && Leaf >= 0.01 && DVI <= t_leaf_e) {
-    ext_leaf_y_update = ext_leaf_y_initial*(1 - (1 + ((t_leaf_e - DVI)/(t_leaf_e - t_leaf_m)))
-                                                    *pow((DVI/t_leaf_e), (t_leaf_e/(t_leaf_e - t_leaf_m))));
-    ext_leaf_z_update = ext_leaf_z_initial*(1 - (1 + ((t_leaf_e - DVI)/(t_leaf_e - t_leaf_m)))
-                                                    *pow((DVI/t_leaf_e), (t_leaf_e/(t_leaf_e - t_leaf_m))));
+  } else if (kLeaf >= 0.005 && DVI <= t_leaf_e) {
+    ext_leaf_y_update = ext_leaf_y_initial*pow((DVI),3);
+    ext_leaf_z_update = ext_leaf_z_initial*pow((DVI),3);
   }
   
 
@@ -197,9 +193,8 @@ void longitudinal_extensibility_update::do_operation() const
   double ext_pods_x_update;
   if (kGrain < 0.005) {
     ext_pods_x_update = 0;
-  } else if (kGrain >= 0.005 && Grain > 0.01) {
-    ext_pods_x_update = ext_pods_x_initial*(1 - (1 + ((t_pods_e - DVI)/(t_pods_e - t_pods_m)))
-                                                  *pow((DVI/t_pods_e), (t_pods_e/(t_pods_e - t_pods_m))));
+  } else if (kGrain >= 0.005) {
+    ext_pods_x_update = ext_pods_x_initial*pow((DVI-1),3);
   }
 
   

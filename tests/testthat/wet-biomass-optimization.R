@@ -11,10 +11,12 @@ library(DEoptim)
 
 year = 2005
 
-load("C:/Users/natal/OneDrive/Documents/masters/research/data/soybean_weather_wp.rdata")
+#load("C:/Users/natal/OneDrive/Documents/masters/research/data/soybean_weather_wp.rdata")
+load("/Users/natalie/Documents/data/soybean_weather_wp.rdata")
 weatherData <- merged_soybean_weather[[as.character(year)]]
 
-dryBiomass <- read.csv(paste0("C:/Users/natal/OneDrive/Documents/masters/research/data/optimization/dryBiomass_", year, ".csv"),
+
+dryBiomass <- read.csv("/Users/natalie/Documents/data/dryBiomass_2005.csv",
                        row.names = 1)
 
 # Processing dry biomass data so it is comparable to wet biomass
@@ -192,7 +194,7 @@ objective_function <- function(optimParams, init_values, parameters, weatherData
                     output_step_size = 1.0,
                     adaptive_rel_error_tol = 1e-2, #1e-4 try increasing or decreasing
                     adaptive_abs_error_tol = 1e-2, #1e-4
-                    adaptive_max_steps = 50)
+                    adaptive_max_steps = 200)
   )
   
   # Assigning a large error if simulation does not complete
@@ -223,8 +225,8 @@ objective_function <- function(optimParams, init_values, parameters, weatherData
 
 # Specifying bounds
 # Extensibility, elastic modulus, critical turgor pressure, and resistance
-lower_bounds <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.1,0,0,0,0)
-upper_bounds <- c(10,10,10,10,10,10,10,100,100,100,100,100,100,100,0.9,10,10,10,10)
+lower_bounds <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.3,0,0,0,0)
+upper_bounds <- c(1,1,1,1,1,1,1,50,50,50,50,50,50,50,0.8,0.5,0.5,0.5,0.5)
 
 
 # Run differential evolution
@@ -241,8 +243,8 @@ calibration_result <- DEoptim(
   differential_modules_new = differential_modules_new,
   obsBiomass = obsBiomass,
   control = DEoptim.control(
-    itermax = 140,      # Maximum number of generations
-    NP = 100,            # Population size (rule of thumb: 10x the number of parameters)
+    itermax = 200,      # Maximum number of generations
+    NP = 190,            # Population size (rule of thumb: 10x the number of parameters)
     CR = 0.9,           # Crossover probability (0 to 1)
     F = 0.8,            # Differential weighting factor (0 to 2)
     trace = 10          # Print progress to the console every 10 iterations

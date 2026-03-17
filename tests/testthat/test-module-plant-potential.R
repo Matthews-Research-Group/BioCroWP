@@ -2,7 +2,7 @@ library(BioCro)
 library(BioCroWP)
 library(BioCroWater)
 
-load("C:/Users/natal/OneDrive/Documents/masters/research/data/soybean_weather_wp.rdata")
+load("/Users/natalie/Documents/data/soybean_weather_wp.rdata")
 weatherData <- merged_soybean_weather$'2005'
 
 weatherData_top <- head(weatherData,600)
@@ -94,14 +94,14 @@ parameters =   within(soybean$parameters, {
   elevation                   = 219
   bare_soil_albedo            = 0.15
   max_rooting_layer = 4
-  ext_root_x = 0.1#0.55 #0.055, constant
+  ext_root_x = 0.55#0.55 #0.055, constant
   ext_root_z_initial = 0.4#1.6 #0.275
   ext_stem_x = 0.1 #0.75 #0.055, constant
-  ext_stem_z_initial = 0.4 #2.0 #0.275
+  ext_stem_z_initial = 0.3 #2.0 #0.275
   ext_leaf_x = 0   #constant
-  ext_leaf_y_initial = 1#0.75 #0.55
-  ext_leaf_z_initial = 1#0.75 #0.55
-  ext_pods_x_initial = 0.4 #1.5 #0.2
+  ext_leaf_y_initial = 0.8#0.75 #0.55
+  ext_leaf_z_initial = 0.8#0.75 #0.55
+  ext_pods_x_initial = 0.6 #1.5 #0.2
   mod_root_x = 25 #57
   mod_root_z = 25#57
   mod_stem_x = 25#15 #57
@@ -110,12 +110,12 @@ parameters =   within(soybean$parameters, {
   mod_leaf_y = 1 #0.75 #2
   mod_leaf_z = 5 #2.25 #9
   mod_pods_x = 5 #2.25 #9
-  wp_crit = 0.40
+  wp_crit = 0.45
   storage_water_frac = 0.8
-  R_soil_root = 0.16 #0.0216217167
-  R_root_stem = 0.08  #0.154440833
-  R_stem_leaf = 0.04 #0.0926645
-  R_stem_pods = 0.08 #0.0926645
+  R_soil_root = 0.15 #0.0216217167
+  R_root_stem = 0.07  #0.154440833
+  R_stem_leaf = 0.03 #0.0926645
+  R_stem_pods = 0.04 #0.0926645
   #soil_temperature_avg = 298.15
   t_root_m = 0.0
   t_root_e = 1.0
@@ -140,7 +140,7 @@ result <- run_biocro(
                   output_step_size = 1.0,
                   adaptive_rel_error_tol = 1e-2, #1e-4 try increasing or decreasing
                   adaptive_abs_error_tol = 1e-2, #1e-4
-                  adaptive_max_steps = 50)
+                  adaptive_max_steps = 400)
 )
 sim_end <- Sys.time()
 sim_time = sim_end - sim_start
@@ -170,8 +170,10 @@ legend("bottomleft",
        lty = c(1, 1, 1, 1))
 
 # organ flow check
+canopy_transpiration_g = result$canopy_transpiration_rate*10^6
+
 plot(result$time/24, result$F_rwu, col='red',
-     ylim=c(-1000000,3000000),
+     ylim=c(-1000000,6000000),
      #ylim = c(0,20000),
      main='Model Crash Debug- Organ Flows',
      xlab = 'DOY',
@@ -179,12 +181,13 @@ plot(result$time/24, result$F_rwu, col='red',
 points(result$time/24, result$F_root_stem, col='orange')
 points(result$time/24, result$F_stem_leaf, col='green')
 points(result$time/24, result$F_stem_pods, col='black')
+points(result$time/24, canopy_transpiration_g, col = 'pink')
 
 legend("topleft", 
-       legend = c("F_rwu", "F_rs", "F_sl", "F_sp"),
-       col = c("red", "orange", "green", "black"),
-       lwd = c(2, 2, 2, 2, 2),
-       lty = c(1, 1, 1, 1, 1))
+       legend = c("F_rwu", "F_rs", "F_sl", "F_sp", 'transpiration'),
+       col = c("red", "orange", "green", "black", 'pink'),
+       lwd = c(2, 2, 2, 2, 2,2),
+       lty = c(1, 1, 1, 1, 1,1))
 
 # water content check
 par(mfrow = c(2, 2))
@@ -224,9 +227,74 @@ legend("topright",
        lwd = c(2, 2, 2, 2),
        lty = c(1, 1, 1, 1))
 
+par(mfrow = c(1, 1))
+
 length(result$time)
 
 ############################################################################################################
+
+# Extensibility
+plot(result$DVI, result$ext_root_z)
+plot(result$DVI, result$ext_stem_z)
+plot(result$DVI, result$ext_leaf_y)
+plot(result$DVI, result$ext_leaf_z)
+plot(result$DVI, result$ext_pods_x)
+
+par(mfrow = c(3,1))
+
+
+# Organ water content to soil potential comparision
+plot(result$time/24, result$stem_water_content)
+plot(result$time/24, result$leaf_water_content)
+plot(result$time/24, result$soil_potential_avg)
+
+par(mfrow = c(1,1))
+
+###############################################################################################################################
+
+# Error calculation
+dryBiomass <- read.csv("/Users/natalie/Documents/data/dryBiomass_2005.csv",
+                       row.names = 1)
+
+# Processing dry biomass data so it is comparable to wet biomass
+obsRoot <- dryBiomass$root * 7.333e6
+obsStem <- dryBiomass$stem * 7.333e6
+obsLeaf <- dryBiomass$leaf * 7.333e6
+obsPods <- dryBiomass$pods * 7.333e6
+
+obsBiomass <- data.frame(
+  DOY = dryBiomass$DOY,
+  hour = dryBiomass$hour,
+  Root = obsRoot,
+  Stem = obsStem,
+  Leaf = obsLeaf,
+  Grain = obsPods
+)
+
+error_calc <- function(result, obsBiomass) {
+  
+  if (nrow(result) != nrow(obsBiomass)) {
+    return(1e9)
+  }
+  
+  error_root <- sqrt((1/nrow(result))*sum((result$Root - obsBiomass$Root)^2))
+  error_stem <- sqrt((1/nrow(result))*sum((result$Stem - obsBiomass$Stem)^2))
+  error_leaf <- sqrt((1/nrow(result))*sum((result$Leaf - obsBiomass$Leaf)^2))
+  error_pods <- sqrt((1/nrow(result))*sum((result$Grain - obsBiomass$Grain)^2))
+  
+  rel_error_root <- error_root / mean(obsBiomass$Root)
+  rel_error_stem <- error_stem / mean(obsBiomass$Stem)
+  rel_error_leaf <- error_leaf / mean(obsBiomass$Leaf)
+  rel_error_pods <- error_pods / mean(obsBiomass$Grain)
+  error <- rel_error_root + rel_error_stem + rel_error_leaf + rel_error_pods
+  
+  return(c(error, error_root, error_stem, error_leaf, error_pods))
+}
+
+error_sim <- error_calc(result, obsBiomass)
+print(error_sim)
+
+
 ###############################################################################################################################
 plot(result$time/24, result$root_total_potential,
      type='p', col = 'red',
@@ -786,13 +854,13 @@ plot(result$time/24, expected_wet_stem, ylim = c(0, 40000000),
      main = 'Stem', col = 'green')
 points(result$time/24, result$stem_water_content, col = 'blue')
 
-legend("bottomright",
+legend("topleft",
        legend = c("dry conversion", "simulated"),
        col = c("green", "blue"),
        lwd = c(2,2),
        lty = c(1,1))
 
-plot(result$time/24, expected_wet_leaf, ylim = c(0, 400000000),
+plot(result$time/24, expected_wet_leaf, ylim = c(0, 40000000),
      main = 'Leaf', col = 'green')
 points(result$time/24, result$leaf_water_content, col = 'blue')
 
@@ -806,7 +874,7 @@ plot(result$time/24, expected_wet_pods, ylim = c(0, 100000000),
      main = 'Grain', col = 'green')
 points(result$time/24, result$pods_water_content, col = 'blue')
 
-legend("bottomright",
+legend("topleft",
        legend = c("dry conversion", "simulated"),
        col = c("green", "blue"),
        lwd = c(2,2),
@@ -933,8 +1001,4 @@ plot(result$DVI, result$ext_leaf_y)
 plot(result$DVI, result$ext_leaf_z)
 plot(result$DVI, result$ext_pods_x)
 
-plot(result$time, result$ext_root_z)
-plot(result$DVI, result$ext_stem_z)
-plot(result$DVI, result$ext_leaf_y)
-plot(result$DVI, result$ext_leaf_z)
-plot(result$DVI, result$ext_pods_x)
+
