@@ -172,14 +172,15 @@ objective_function <- function(optimParams, init_values, parameters, weatherData
   parameters$mod_root_z <- optimParams[9]
   parameters$mod_stem_x <- optimParams[10]
   parameters$mod_stem_z <- optimParams[11]
-  parameters$mod_leaf_y <- optimParams[12]
-  parameters$mod_leaf_z <- optimParams[13]
-  parameters$mod_pods_x <- optimParams[14]
-  parameters$wp_crit <- optimParams[15]
-  parameters$R_soil_root <- optimParams[16]
-  parameters$R_root_stem <- optimParams[17]
-  parameters$R_stem_leaf <- optimParams[18]
-  parameters$R_stem_pods <- optimParams[19]
+  parameters$mod_leaf_x <- optimParams[12]
+  parameters$mod_leaf_y <- optimParams[13]
+  parameters$mod_leaf_z <- optimParams[14]
+  parameters$mod_pods_x <- optimParams[15]
+  parameters$wp_crit <- optimParams[16]
+  parameters$R_soil_root <- optimParams[17]
+  parameters$R_root_stem <- optimParams[18]
+  parameters$R_stem_leaf <- optimParams[19]
+  parameters$R_stem_pods <- optimParams[20]
   
 
   
@@ -225,8 +226,8 @@ objective_function <- function(optimParams, init_values, parameters, weatherData
 
 # Specifying bounds
 # Extensibility, elastic modulus, critical turgor pressure, and resistance
-lower_bounds <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.3,0,0,0,0)
-upper_bounds <- c(1,1,1,1,1,1,1,50,50,50,50,50,50,50,0.8,0.5,0.5,0.5,0.5)
+lower_bounds <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.3,0,0,0,0)
+upper_bounds <- c(1,1,1,1,1,1,1,50,50,50,50,50,50,50,50,0.8,0.5,0.5,0.5,0.5)
 
 
 # Run differential evolution
@@ -244,7 +245,7 @@ calibration_result <- DEoptim(
   obsBiomass = obsBiomass,
   control = DEoptim.control(
     itermax = 200,      # Maximum number of generations
-    NP = 190,            # Population size (rule of thumb: 10x the number of parameters)
+    NP = 200,            # Population size (rule of thumb: 10x the number of parameters)
     CR = 0.9,           # Crossover probability (0 to 1)
     F = 0.8,            # Differential weighting factor (0 to 2)
     trace = 10          # Print progress to the console every 10 iterations
@@ -268,14 +269,15 @@ parameters$mod_root_x <- best_params[8]
 parameters$mod_root_z <- best_params[9]
 parameters$mod_stem_x <- best_params[10]
 parameters$mod_stem_z <- best_params[11]
-parameters$mod_leaf_y <- best_params[12]
-parameters$mod_leaf_z <- best_params[13]
-parameters$mod_pods_x <- best_params[14]
-parameters$wp_crit <- best_params[15]
-parameters$R_soil_root <- best_params[16]
-parameters$R_root_stem <- best_params[17]
-parameters$R_stem_leaf <- best_params[18]
-parameters$R_stem_pods <- best_params[19]
+parameters$mod_leaf_x <- best_params[12]
+parameters$mod_leaf_y <- best_params[13]
+parameters$mod_leaf_z <- best_params[14]
+parameters$mod_pods_x <- best_params[15]
+parameters$wp_crit <- best_params[16]
+parameters$R_soil_root <- best_params[17]
+parameters$R_root_stem <- best_params[18]
+parameters$R_stem_leaf <- best_params[19]
+parameters$R_stem_pods <- best_params[20]
 
 # Running the model with best parameters
 result <- run_biocro(
@@ -283,7 +285,7 @@ result <- run_biocro(
   differential_modules_new,
   ode_solver=list(type ="boost_rosenbrock", output_step_size = 1.0,
                   adaptive_rel_error_tol = 1e-2, adaptive_abs_error_tol = 1e-2, 
-                  adaptive_max_steps = 50)
+                  adaptive_max_steps = 200)
 )
 
 # Calculate and print the final raw RMSE for each organ
