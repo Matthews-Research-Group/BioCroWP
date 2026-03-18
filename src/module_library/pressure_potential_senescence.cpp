@@ -214,13 +214,12 @@ void pressure_potential_senescence::do_operation() const
     double dV_root = 0.0;
 
     // These calculations apply to cases 2 and 3
-    double dW_root_pre = F_rwu - F_root_stem; // g ha-1 hr-1
-    double sene_rwc = kSeneRoot*dW_root_pre; // fraction of root wet biomass senesced
+    double sene_rwc = kSeneRoot*root_water_content; // fraction of root wet biomass senesced
     double potential_value_root = std::max(root_pressure_potential, wp_crit); // MPa
 
     if (kRoot >= 0.005){ // Case 2: organ growth has begun and carbon allocation is sufficient for plastic growth
 
-        dW_root = dW_root_pre - sene_rwc;
+        dW_root = F_rwu - F_root_stem - sene_rwc; // g ha-1 hr-1
         root_dPP = ((dW_root/(pw*root_volume) - (ext_root_z + 2*ext_root_x)*(potential_value_root - wp_crit))
                     *((mod_root_x*mod_root_z)/(2*mod_root_z + mod_root_x))); // MPa
         dV_root = root_volume*(((2*mod_root_z + mod_root_x)/(mod_root_z*mod_root_z))*root_dPP 
@@ -228,7 +227,7 @@ void pressure_potential_senescence::do_operation() const
 
     } else if (kRoot < 0.005 && Root >= 0.01) { // Case 3: Carbon allocation is not sufficient for plastic growth
 
-        dW_root = dW_root_pre - sene_rwc;
+        dW_root = F_rwu - F_root_stem - sene_rwc; // g ha-1 hr-1
         root_dPP = ((dW_root/(pw*root_volume))
                     *((mod_root_x*mod_root_z)/(2*mod_root_z + mod_root_x))); // MPa
         dV_root = root_volume*(((2*mod_root_z + mod_root_x)/(mod_root_z*mod_root_z))*root_dPP); // m3 
@@ -243,13 +242,12 @@ void pressure_potential_senescence::do_operation() const
     double stem_dPP = 0.0;
     double dV_stem = 0.0;
 
-    double dW_stem_pre = F_root_stem - F_stem_leaf - F_stem_pods;
-    double sene_swc = kSeneStem*dW_stem_pre;
+    double sene_swc = kSeneStem*stem_water_content;
     double potential_value_stem = std::max(stem_pressure_potential, wp_crit);
 
     if (kStem >= 0.005) { // Case 2: Carbon allocation is sufficient for plastic growth
         
-        dW_stem = dW_stem_pre - sene_swc; 
+        dW_stem = F_root_stem - F_stem_leaf - F_stem_pods - sene_swc;
         stem_dPP = ((dW_stem/(pw*stem_volume) - (ext_stem_z + 2*ext_stem_x)*(potential_value_stem - wp_crit))
                         *((mod_stem_x*mod_stem_z)/(2*mod_stem_z + mod_stem_x))); // MPa
         dV_stem = stem_volume*(((2*mod_stem_z + mod_stem_x)/(mod_stem_z*mod_stem_z))*stem_dPP 
@@ -257,7 +255,7 @@ void pressure_potential_senescence::do_operation() const
 
     } else if (kStem < 0.005 && Stem >= 0.01){ // Case 3: Carbon allocation is not sufficient for plastic growth
         
-        dW_stem = dW_stem_pre - sene_swc; 
+        dW_stem = F_root_stem - F_stem_leaf - F_stem_pods - sene_swc;
         stem_dPP = ((dW_stem/(pw*stem_volume))
                     *((mod_stem_x*mod_stem_z)/(2*mod_stem_z + mod_stem_x))); // MPa
         dV_stem = stem_volume*(((2*mod_stem_z + mod_stem_x)/(mod_stem_z*mod_stem_z))*stem_dPP); // m3 
@@ -277,13 +275,12 @@ void pressure_potential_senescence::do_operation() const
         transpiration = 0; // transpiration should never be negative, setting to 0 if this is the case
     }
 
-    double dW_leaf_pre = F_stem_leaf - transpiration;
     double sene_lwc = kSeneLeaf*leaf_water_content;
     double potential_value_leaf = std::max(leaf_pressure_potential, wp_crit);
 
     if (kLeaf >= 0.005) { // Case 2: Carbon allocation is sufficient for plastic growth
         
-        dW_leaf = dW_leaf_pre - sene_lwc;
+        dW_leaf = F_stem_leaf - sene_lwc - transpiration;
         leaf_dPP = ((dW_leaf/(pw*leaf_volume) - (ext_leaf_z + ext_leaf_y)*(potential_value_leaf - wp_crit))
                         *((mod_leaf_x*mod_leaf_z*mod_leaf_y)/(mod_leaf_x*mod_leaf_z + mod_leaf_z*mod_leaf_y + mod_leaf_x*mod_leaf_y)));
         dV_leaf = leaf_volume*(((mod_leaf_x*mod_leaf_z + mod_leaf_z*mod_leaf_y + mod_leaf_x*mod_leaf_y)/(mod_leaf_x*mod_leaf_z*mod_leaf_y))
@@ -291,7 +288,7 @@ void pressure_potential_senescence::do_operation() const
 
     } else if (kLeaf < 0.005 && Leaf >= 0.1) { // Case 3: Carbon allocation is not sufficient for plastic growth
 
-        dW_leaf = dW_leaf_pre - sene_lwc;
+        dW_leaf = F_stem_leaf - sene_lwc - transpiration;
         leaf_dPP = ((dW_leaf/(pw*leaf_volume))
                     *((mod_leaf_x*mod_leaf_z*mod_leaf_y)/(mod_leaf_x*mod_leaf_z + mod_leaf_z*mod_leaf_y + mod_leaf_x*mod_leaf_y)));
         dV_leaf = leaf_volume*(((mod_leaf_x*mod_leaf_z + mod_leaf_z*mod_leaf_y + mod_leaf_x*mod_leaf_y)/(mod_leaf_x*mod_leaf_z*mod_leaf_y))

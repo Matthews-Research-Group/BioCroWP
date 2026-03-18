@@ -102,13 +102,13 @@ parameters =   within(soybean$parameters, {
   ext_leaf_y_initial = 0.8#0.75 #0.55
   ext_leaf_z_initial = 0.8#0.75 #0.55
   ext_pods_x_initial = 0.6 #1.5 #0.2
-  mod_root_x = 25 #57
-  mod_root_z = 25#57
-  mod_stem_x = 25#15 #57
-  mod_stem_z = 25#15 #57
-  mod_leaf_x = 5 #9
+  mod_root_x = 15 #57
+  mod_root_z = 15#57
+  mod_stem_x = 15#15 #57
+  mod_stem_z = 15#15 #57
+  mod_leaf_x = 3 #9
   mod_leaf_y = 1 #0.75 #2
-  mod_leaf_z = 5 #2.25 #9
+  mod_leaf_z = 3 #2.25 #9
   mod_pods_x = 5 #2.25 #9
   wp_crit = 0.45
   storage_water_frac = 0.8
@@ -140,7 +140,7 @@ result <- run_biocro(
                   output_step_size = 1.0,
                   adaptive_rel_error_tol = 1e-2, #1e-4 try increasing or decreasing
                   adaptive_abs_error_tol = 1e-2, #1e-4
-                  adaptive_max_steps = 400)
+                  adaptive_max_steps = 600)
 )
 sim_end <- Sys.time()
 sim_time = sim_end - sim_start
@@ -156,7 +156,7 @@ par(mfrow = c(1, 1))
 
 plot(result$time/24, result$root_pressure_potential, col='red',
      ylim=c(-1.0,1.0),
-     main='Model Crash Debug- Pressure Potential',
+     main='Pressure Potential',
      xlab = 'DOY',
      ylab= 'Pressure Potential (MPa)')
 points(result$time/24, result$stem_pressure_potential, col='orange')
@@ -175,7 +175,7 @@ canopy_transpiration_g = result$canopy_transpiration_rate*10^6
 plot(result$time/24, result$F_rwu, col='red',
      ylim=c(-1000000,6000000),
      #ylim = c(0,20000),
-     main='Model Crash Debug- Organ Flows',
+     main='Organ Flows',
      xlab = 'DOY',
      ylab= 'Water Flow (g ha-1 hr-1)')
 points(result$time/24, result$F_root_stem, col='orange')
@@ -214,7 +214,7 @@ par(mfrow = c(1, 1))
 # total potential check
 plot(result$time/24, result$root_total_potential, col='red',
      ylim=c(-1.2,0),
-     main='Model Crash Debug- Total Potential',
+     main='Total Potential',
      xlab = 'DOY',
      ylab= 'Total Potential (MPa)')
 points(result$time/24, result$stem_total_potential, col='orange')
@@ -249,6 +249,12 @@ plot(result$time/24, result$leaf_water_content)
 plot(result$time/24, result$soil_potential_avg)
 
 par(mfrow = c(1,1))
+
+
+# Senescence
+plot(result$time/24, result$kSeneRoot*result$root_water_content)
+plot(result$time/24, result$kSeneStem*result$stem_water_content)
+plot(result$time/24, result$kSeneLeaf*result$leaf_water_content)
 
 ###############################################################################################################################
 
