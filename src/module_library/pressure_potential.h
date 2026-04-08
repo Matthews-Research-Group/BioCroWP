@@ -38,16 +38,16 @@ class pressure_potential : public differential_module
     double const& pods_volume;
 
     double const& ext_root_x;
-    double const& ext_root_z;
+    double const& ext_root_z_initial;
 
     double const& ext_stem_x;
-    double const& ext_stem_z;
+    double const& ext_stem_z_initial;
 
     double const& ext_leaf_x;
-    double const& ext_leaf_y;
-    double const& ext_leaf_z;
+    double const& ext_leaf_y_initial;
+    double const& ext_leaf_z_initial;
 
-    double const& ext_pods_x;
+    double const& ext_pods_x_initial;
 
     double const& mod_root_x;
     double const& mod_root_z;
@@ -84,6 +84,11 @@ class pressure_potential : public differential_module
     double* pods_pressure_potential_op;
     double* pods_water_content_op;
     double* pods_volume_op;
+
+    double* root_volume_plastic_op;
+    double* stem_volume_plastic_op;
+    double* leaf_volume_plastic_op;
+    double* pods_volume_plastic_op;
 
     // Main operation
     void do_operation() const;

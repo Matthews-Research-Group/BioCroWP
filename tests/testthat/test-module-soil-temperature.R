@@ -5,11 +5,11 @@ library(data.table)
 library(dplyr)
 library(lubridate)
 
-year = 2002
+year = 2005
 
 # Using weather file with daily max/min air temps to validate soil temp module
 load("C:/Users/natal/OneDrive/Documents/masters/research/data/soybean_weather_wp.rdata")
-weatherData <- merged_soybean_weather$'2002'
+weatherData <- merged_soybean_weather$'2005'
 #weatherData <- soybean_weather$'2002'
 
 # listing direct modules
@@ -19,7 +19,7 @@ direct_modules_water_potential = list("BioCroWater:soil_type_selector", "BioCroW
                                       "BioCroWater:multilayer_soil_profile_avg",
                                       "BioCroWP:soil_temperature",
                                       "BioCroWP:soil_potential",
-                                      "BioCroWP:total_potential",
+                                      #"BioCroWP:total_potential",
                                       "BioCroWP:osmotic_potential")
 direct_modules_new = soybean$direct_modules
 old_soil_evapo_index = which(direct_modules_new=="BioCro:soil_evaporation")
@@ -28,8 +28,10 @@ direct_modules = c(direct_modules_new[1:(old_soil_evapo_index-1)],direct_modules
                    direct_modules_new[old_soil_evapo_index:length(direct_modules_new)]) # insert BioCroWP
 
 # listing differential modules
-differential_modules_water_potential = list("BioCroWater:soil_evaporation","BioCroWater:multi_layer_soil_profile",
-                                            "BioCroWP:pressure_potential")
+differential_modules_water_potential = list("BioCroWater:soil_evaporation",
+                                            "BioCroWater:multi_layer_soil_profile"
+                                            #"BioCroWP:pressure_potential"
+                                            )
 differential_modules_new = soybean$differential_modules
 old_soil_profile_index = which(differential_modules_new=="BioCro:two_layer_soil_profile")
 differential_modules_new = differential_modules_new[-old_soil_profile_index] #remove soil_profile
@@ -56,6 +58,7 @@ init_values =   within(soybean$initial_values,{
   root_volume = 1
   stem_volume = 1
   leaf_volume = 1 # no leaves in initial development stages
+  pods_volume = 1
   root_pressure_potential = -0.04  # Initial value to be updated
   stem_pressure_potential = -0.3
   leaf_pressure_potential = -0.5
@@ -111,6 +114,9 @@ parameters =   within(soybean$parameters, {
   R_soil_root = 1
   R_root_stem = 1
   R_stem_leaf = 1
+  minimum_temp_year = (28.916 - 32.)/1.8
+  maximum_temp_year = (76.910 - 32.0)/1.8
+  start_doy = weatherData$doy[1]
 })
 parameters[c('soil_field_capacity','soil_saturated_conductivity','soil_saturation_capacity','soil_wilting_point')]=NULL
 parameters[c('kShell','net_assimilation_rate_shell')] = NULL
@@ -162,7 +168,8 @@ write.csv(soil_temp_df, "C:\\Users\\natal\\OneDrive\\documents\\masters\\researc
 
 # Calculating daily avg/min/max for each layer
 # Putting results in dt
-sim_doy = floor(result$time/24)
+#sim_doy = floor(result$time/24)
+sim_doy = result$doy
 layer_dt <- data.table(
   time = sim_doy,
   L1 = result$soil_temperature_1,
@@ -203,7 +210,7 @@ warm_data <- fread('C:\\Users\\natal\\OneDrive\\Documents\\masters\\research\\da
 warm_data$doy <- as.numeric(format(as.Date(with(warm_data, paste(year, month, day, sep = "-")), "%Y-%m-%d"), "%j"))
 
 # selecting data from just the simulation period
-warm_data_year = warm_data[year==2002]
+warm_data_year = warm_data[year==2005]
 warm_data_period <- warm_data_year[sim_doy[1]:sim_doy[length(sim_doy)]]
 
 # Converting from Fahrenheit to Kelvin
@@ -227,6 +234,9 @@ observed_max <- data.table(
   four_in_sod = (as.numeric(warm_data_period$max_soiltemp_4in_sod) - 32)/1.8 + 273.15,
   eight_in_sod = (as.numeric(warm_data_period$max_soiltemp_8in_sod) - 32)/1.8 + 273.15
 )
+
+min_temp <- as.numeric(min(warm_data_year$min_air_temp))
+max_temp <- as.numeric(max(warm_data_year$max_air_temp))
 
 ###############################################################################################################################
 
@@ -274,22 +284,37 @@ abline(a = 0, b = 1, col = "red", lty = 2)
 legend("topleft", legend = paste("R² =", round(R2, 4)), bty = "n")
 
 # min
-#R2 <- 1 - (sum((observed_min$eight_in_sod - daily_min_dt$L2)^2)/sum((observed_min$eight_in_sod - mean(observed_min$eight_in_sod))^2))
-R2 <- cor(observed_min$eight_in_sod, daily_min_dt$L3, method = "pearson")^2
+R2 <- 1 - (sum((observed_min$eight_in_sod - daily_min_dt$L2)^2)/sum((observed_min$eight_in_sod - mean(observed_min$eight_in_sod))^2))
+#R2 <- cor(observed_min$eight_in_sod, daily_min_dt$L3, method = "pearson")^2
 plot(observed_min$eight_in_sod, daily_min_dt$L3, xlab='Observed 8in Sod (K)',
      ylab = 'Simulated Layer 3 (K)', main = 'Minimum 8in Sod vs Layer 3')
 abline(a = 0, b = 1, col = "red", lty = 2)
 legend("topleft", legend = paste("R² =", round(R2, 4)), bty = "n")
 
 # max
-#R2 <- 1 - (sum((observed_max$eight_in_sod - daily_max_dt$L2)^2)/sum((observed_max$eight_in_sod - mean(observed_max$eight_in_sod))^2))
-R2 <- cor(observed_max$eight_in_sod, daily_max_dt$L3, method = "pearson")^2
+R2 <- 1 - (sum((observed_max$eight_in_sod - daily_max_dt$L2)^2)/sum((observed_max$eight_in_sod - mean(observed_max$eight_in_sod))^2))
+#R2 <- cor(observed_max$eight_in_sod, daily_max_dt$L3, method = "pearson")^2
 plot(observed_max$eight_in_sod, daily_max_dt$L3, xlab='Observed 8in Sod (K)',
      ylab = 'Simulated Layer 3 (K)', main = 'Maximum 8in Sod vs Layer 3')
 abline(a = 0, b = 1, col = "red", lty = 2)
 legend("topleft", legend = paste("R² =", round(R2, 4)), bty = "n")
 
 
+################################################################################################################################
+
+plot(observed_avg$time, observed_avg$four_in_sod, col='blue')
+points(observed_avg$time, daily_avg_dt$L2, col='red')
+
+################################################################################################################################
+# calculating RMSE
+
+L2_avg_RMSE <- sqrt((1/length(observed_avg$four_in_sod))*sum((daily_avg_dt$L2 - observed_avg$four_in_sod)^2))
+L2_min_RMSE <- sqrt((1/length(observed_min$four_in_sod))*sum((daily_min_dt$L2 - observed_min$four_in_sod)^2))
+L2_max_RMSE <- sqrt((1/length(observed_max$four_in_sod))*sum((daily_max_dt$L2 - observed_max$four_in_sod)^2))
+
+L3_avg_RMSE <- sqrt((1/length(observed_avg$eight_in_sod))*sum((daily_avg_dt$L3 - observed_avg$eight_in_sod)^2))
+L3_min_RMSE <- sqrt((1/length(observed_min$eight_in_sod))*sum((daily_min_dt$L3 - observed_min$eight_in_sod)^2))
+L3_max_RMSE <- sqrt((1/length(observed_max$eigth_in_sod))*sum((daily_max_dt$L3 - observed_max$eight_in_sod)^2))
 ################################################################################################################################
 # plotting temperature in profile
 
@@ -333,4 +358,18 @@ legend("bottomleft",
        lwd = c(2, 2, 2, 2, 2),
        lty = c(1, 1, 1, 1, 1))
 
+i_max <- which.max(warm_data_year$avg_soiltemp_4in_sod)[1]
+warm_data_year$day[i_max]
 
+i_jan <- which(warm_data_year$month == 1)
+i_jul <- which(warm_data_year$month == 8)
+
+jan_avg_min = mean(as.numeric(warm_data_year$min_air_temp[i_jan[1]:i_jan[length(i_jan)]]))
+jan_avg_max = mean(as.numeric(warm_data_year$max_air_temp[i_jan[1]:i_jan[length(i_jan)]]))
+jul_avg_min = mean(as.numeric(warm_data_year$min_air_temp[i_jul[1]:i_jul[length(i_jul)]]))
+jul_avg_max = mean(as.numeric(warm_data_year$max_air_temp[i_jul[1]:i_jul[length(i_jul)]]))
+
+jan_avg <- (jan_avg_min + jan_avg_max)/2
+jul_avg <- (jul_avg_min + jul_avg_max)/2
+
+aug_avg <- mean(as.numeric(warm_data_year$avg_air_temp[i_jul[1]:i_jul[length(i_jul)]]))

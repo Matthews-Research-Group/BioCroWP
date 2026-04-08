@@ -2,25 +2,29 @@ library(BioCro)
 library(BioCroWP)
 library(BioCroWater)
 
-load("/Users/natalie/Documents/data/soybean_weather_wp.rdata")
+#load("/Users/natalie/Documents/data/soybean_weather_wp.rdata")
+load("C:/Users/natal/OneDrive/Documents/masters/research/data/soybean_weather_wp.rdata")
 weatherData <- merged_soybean_weather$'2005'
 
-weatherData_top <- head(weatherData,600)
-weatherData_slice <- weatherData[601:2600,]
-weatherData_bottom <- weatherData[2601:2952,]
+#weatherData_top <- head(weatherData,600)
+#weatherData_slice <- weatherData[601:2600,]
+#weatherData_bottom <- weatherData[2601:2952,]
 
 
 direct_modules_soil_water = list("BioCroWater:soil_type_selector", "BioCroWater:soil_surface_runoff",
                                  "BioCroWater:soil_water_downflow", "BioCroWater:soil_water_tiledrain", 
                                  "BioCroWater:soil_water_upflow","BioCroWater:soil_water_uptake",
                                  "BioCroWater:multilayer_soil_profile_avg",
-                                 "BioCroWP:water_flow",
+                                 #"BioCroWP:flow_resistance_calculator",
+                                 #"BioCroWP:water_flow",
                                  "BioCroWP:soil_temperature",
                                  "BioCroWP:soil_potential",
                                  "BioCroWP:longitudinal_extensibility_update",
                                  "BioCroWP:osmotic_potential",
                                  "BioCroWP:total_potential",
-                                 "BioCroWP:total_biomass")
+                                 "BioCroWP:calculate_flux"
+                                 #"BioCroWP:total_biomass"
+                                 )
 direct_modules_new = soybean$direct_modules
 old_soil_evapo_index = which(direct_modules_new=="BioCro:soil_evaporation")
 direct_modules_new = direct_modules_new[-old_soil_evapo_index] #remove soil evaporation
@@ -28,8 +32,7 @@ direct_modules_new = c(direct_modules_new[1:(old_soil_evapo_index-1)],direct_mod
                        direct_modules_new[old_soil_evapo_index:length(direct_modules_new)]) # insert BioCroWater
 
 differential_modules_soil_water = list("BioCroWater:soil_evaporation","BioCroWater:multi_layer_soil_profile",
-                                       "BioCroWP:pressure_potential_senescence"
-                                       )
+                                       "BioCroWP:pressure_potential_senescence")
 differential_modules_new = soybean$differential_modules
 old_soil_profile_index = which(differential_modules_new=="BioCro:two_layer_soil_profile")
 differential_modules_new = differential_modules_new[-old_soil_profile_index] #remove soil_profile
@@ -56,17 +59,24 @@ init_values =   within(soybean$initial_values,{
   root_volume = 1 #0.00001
   stem_volume = 1 #0.00005
   leaf_volume = 1 #0.00005 # no leaves in initial development stages
+  root_volume_plastic = 1
+  stem_volume_plastic = 1
+  leaf_volume_plastic = 1
+  pods_volume_plastic = 1
   root_pressure_potential = 0.3
-  stem_pressure_potential = 0.1
-  leaf_pressure_potential = 0.05
-  pods_pressure_potential = 0.05
+  stem_pressure_potential = 0.2
+  leaf_pressure_potential = 0.1
+  pods_pressure_potential = 0.1
   #root_total_potential = -0.1
   #stem_total_potential = -0.4
   #leaf_total_potential = -0.6
   #pods_total_potential = -0.6
   leaf_temperature = 298.15
-  #soil_temperature_avg = 298.15
   kd = 1
+  #F_rwu = 15000000
+  #F_root_stem = 10000000
+  #F_stem_leaf = 5000000
+  #F_stem_pods = 5000000
 })
 init_values$soil_water_content=NULL
 
@@ -109,13 +119,18 @@ parameters =   within(soybean$parameters, {
   mod_leaf_x = 3 #9
   mod_leaf_y = 1 #0.75 #2
   mod_leaf_z = 3 #2.25 #9
-  mod_pods_x = 5 #2.25 #9
-  wp_crit = 0.45
+  mod_pods_x = 1 #2.25 #9
+  wp_crit = 0.40
   storage_water_frac = 0.8
-  R_soil_root = 0.15 #0.0216217167
-  R_root_stem = 0.07  #0.154440833
-  R_stem_leaf = 0.03 #0.0926645
-  R_stem_pods = 0.04 #0.0926645
+  #R_soil_root_base = 0.2 #0.0216217167
+  #R_root_stem_base = 0.02  #0.154440833
+  #R_stem_leaf_base = 0.1 #0.0926645
+  #R_stem_pods_base = 0.25 #0.0926645
+  R_soil_root = 0.04
+  R_root_stem = 0.03
+  R_stem_leaf = 0.02
+  R_stem_pods = 0.04
+  #n_resistance = 0.25
   #soil_temperature_avg = 298.15
   t_root_m = 0.0
   t_root_e = 1.0
@@ -125,11 +140,24 @@ parameters =   within(soybean$parameters, {
   t_leaf_e = 2.0
   t_pods_m = 1.75
   t_pods_e = 2.5
+  minimum_temp_year = (28.916 - 32.)/1.8
+  maximum_temp_year = (76.910 - 32.0)/1.8
+  start_doy = weatherData$doy[1]
+  n_plants = 370658  # plants per hectare: (150000 plants/acre)*(1 acre/4046.86 m2)*(10000 m2/ha)
+  f_leaf = 0.956522  # fraction of transpiration through leaves (Sinha et al. 2023)
+  f_pods = 0.043478  # fraction of transpiration through pods (Sinha et al. 2023)
 })
 parameters[c('soil_field_capacity','soil_saturated_conductivity','soil_saturation_capacity','soil_wilting_point')]=NULL
 parameters[c('kShell','net_assimilation_rate_shell')] = NULL
 
 sim_start <- Sys.time()
+#result <- run_biocro(
+#  init_values,
+#  parameters,
+#  weatherData,
+#  direct_modules_new,
+#  differential_modules_new
+#)
 result <- run_biocro(
   init_values,
   parameters,
@@ -140,7 +168,7 @@ result <- run_biocro(
                   output_step_size = 1.0,
                   adaptive_rel_error_tol = 1e-2, #1e-4 try increasing or decreasing
                   adaptive_abs_error_tol = 1e-2, #1e-4
-                  adaptive_max_steps = 600)
+                  adaptive_max_steps = 10000)
 )
 sim_end <- Sys.time()
 sim_time = sim_end - sim_start
@@ -173,7 +201,7 @@ legend("bottomleft",
 canopy_transpiration_g = result$canopy_transpiration_rate*10^6
 
 plot(result$time/24, result$F_rwu, col='red',
-     ylim=c(-1000000,6000000),
+     ylim=c(-1000000,60000000),
      #ylim = c(0,20000),
      main='Organ Flows',
      xlab = 'DOY',
@@ -229,7 +257,123 @@ legend("topright",
 
 par(mfrow = c(1, 1))
 
+# resistance
+#plot(result$time/24, result$R_soil_root, col='red',
+#     ylim = c(0,200),
+#     main='Resistance',
+#     xlab = 'DOY',
+#     ylab= 'Resistance')
+#points(result$time/24, result$R_root_stem, col='orange')
+#points(result$time/24, result$R_stem_leaf, col='green')
+#points(result$time/24, result$R_stem_pods, col='black')
+
+legend("topright", 
+       legend = c("Root", "Stem", "Leaf", "Pod"),
+       col = c("red", "orange", "green", "black"),
+       lwd = c(2, 2, 2, 2),
+       lty = c(1, 1, 1, 1))
+
+par(mfrow = c(1, 1))
+
 length(result$time)
+
+result$F_rwu - result$F_root_stem
+result$F_root_stem - result$F_stem_leaf - result$F_stem_pods
+result$F_stem_leaf - (result$canopy_transpiration_rate * 1000000)
+result$F_stem_pods
+
+plot(result$time/24, result$RWC_max)
+plot(result$time/24, result$SWC_max)
+plot(result$time/24, result$LWC_max)
+plot(result$time/24, result$PWC_max)
+
+plot(result$fractional_doy, result$root_water_content*0.05/(10^6))
+points(result$fractional_doy, result$Root, col='green')
+
+############################################################################################################
+
+expected_wet_root = (result$Root)*7.333*10^6
+expected_wet_stem = (result$Stem)*7.333*10^6
+expected_wet_leaf = (result$Leaf)*7.333*10^6
+expected_wet_pods = (result$Grain)*7.333*10^6
+
+
+plot(result$time/24, expected_wet_root, ylim = c(0, 300000000),
+     main = 'Root', col = 'green')
+points(result$time/24, result$root_water_content, col = 'blue')
+
+legend("topleft",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, expected_wet_stem, ylim = c(0, 40000000),
+     main = 'Stem', col = 'green')
+points(result$time/24, result$stem_water_content, col = 'blue')
+
+legend("topleft",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, expected_wet_leaf, ylim = c(0, 40000000),
+     main = 'Leaf', col = 'green')
+points(result$time/24, result$leaf_water_content, col = 'blue')
+
+legend("topleft",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, expected_wet_pods, ylim = c(0, 100000000),
+     main = 'Grain', col = 'green')
+points(result$time/24, result$pods_water_content, col = 'blue')
+
+legend("topleft",
+       legend = c("dry conversion", "simulated"),
+       col = c("green", "blue"),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, result$root_water_content, col='blue',
+     main="Minimum and Total Root Water Content")
+points(result$time/24, result$root_volume_plastic*998200, col='red')
+legend("bottomright",
+       legend = c("Minimum", "Total"),
+       col = c('red', 'blue'),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, result$stem_water_content, col='blue',
+     main="Minimum and Total Stem Water Content")
+points(result$time/24, result$stem_volume_plastic*998200, col='red')
+legend("bottomright",
+       legend = c("Minimum", "Total"),
+       col = c('red', 'blue'),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, result$leaf_water_content, col='blue',
+     main="Minimum and Total Leaf Water Content")
+points(result$time/24, result$leaf_volume_plastic*998200, col='red')
+legend("bottomright",
+       legend = c("Minimum", "Total"),
+       col = c('red', 'blue'),
+       lwd = c(2,2),
+       lty = c(1,1))
+
+plot(result$time/24, result$pods_water_content, col='blue',
+     main="Minimum and Total Grain Water Content")
+points(result$time/24, result$pods_volume_plastic*998200, col='red')
+legend("bottomright",
+       legend = c("Minimum", "Total"),
+       col = c('red', 'blue'),
+       lwd = c(2,2),
+       lty = c(1,1))
+
 
 ############################################################################################################
 
@@ -311,9 +455,9 @@ plot(result$time/24, result$root_total_potential,
      main = 'Water Potential over Growing Season')
 
 points(result$time/24, result$soil_potential_avg, col = 'blue')
-points(result$time/24, result$stem_total_potential, col = 'orange')
-points(result$time/24, result$leaf_total_potential, col = 'green')
-points(result$time/24, result$pods_total_potential, col = 'black')
+#points(result$time/24, result$stem_total_potential, col = 'orange')
+#points(result$time/24, result$leaf_total_potential, col = 'green')
+#points(result$time/24, result$pods_total_potential, col = 'black')
 
 legend("bottomright", 
        legend = c("Soil", "Root", "Stem", "Leaf", "Pod"),
@@ -321,17 +465,18 @@ legend("bottomright",
        lwd = c(2, 2, 2, 2, 2),
        lty = c(1, 1, 1, 1, 1))
 
-plot(result$time[2000:2048]/24, result$root_total_potential[2000:2048],
+plot(result$fractional_doy, result$root_total_potential,
      type='p', col = 'red',
+     xlim= c(231,232),
      #xlim = c(result$doy[0], result$doy[length(result$doy)]),
      ylim = c(-0.9,-0.5),
      xlab = 'DOY',
      ylab = 'Potential (MPa)',
      main = 'Total Potential: DOY 230-232')
 
-points(result$time[2000:2048]/24, result$stem_total_potential[2000:2048], col = 'orange')
-points(result$time[2000:2048]/24, result$leaf_total_potential[2000:2048], col = 'green')
-points(result$time[2000:2048]/24, result$pods_total_potential[2000:2048], col = 'black')
+points(result$fractional_doy, result$stem_total_potential, col = 'orange')
+points(result$fractional_doy, result$leaf_total_potential, col = 'green')
+points(result$fractional_doy, result$pods_total_potential, col = 'black')
 #points(result$time[2000:2048]/24, result$soil_potential_avg[2000:2048], col = 'blue')
 
 legend("bottomright", 

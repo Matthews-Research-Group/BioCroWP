@@ -27,6 +27,11 @@ class pressure_potential_senescence : public differential_module
     double const& leaf_pressure_potential;
     double const& pods_pressure_potential;
 
+    double const& root_total_potential;
+    double const& stem_total_potential;
+    double const& leaf_total_potential;
+    double const& pods_total_potential;
+
     double const& root_water_content;
     double const& stem_water_content;
     double const& leaf_water_content;
@@ -62,10 +67,16 @@ class pressure_potential_senescence : public differential_module
 
     double const& wp_crit;
 
-    double const& F_rwu;
-    double const& F_root_stem;
-    double const& F_stem_leaf;
-    double const& F_stem_pods;
+    double const& R_soil_root;
+    double const& R_root_stem;
+    double const& R_stem_leaf;
+    double const& R_stem_pods;
+
+    double const& soil_potential_avg;
+
+    double const& n_plants;
+    double const& f_leaf;
+    double const& f_pods;
 
     double const& kSeneRoot;
     double const& kSeneStem;
@@ -97,6 +108,11 @@ class pressure_potential_senescence : public differential_module
     double* pods_pressure_potential_op;
     double* pods_water_content_op;
     double* pods_volume_op;
+
+    double* root_volume_plastic_op;
+    double* stem_volume_plastic_op;
+    double* leaf_volume_plastic_op;
+    double* pods_volume_plastic_op;
 
     // Main operation
     void do_operation() const;

@@ -41,6 +41,8 @@ class soil_temperature : public direct_module
 
           minimum_temp_day{get_input(input_quantities, "minimum_temp_day")}, // degrees C, daily air temperature
           maximum_temp_day{get_input(input_quantities, "maximum_temp_day")},
+          minimum_temp_year{get_input(input_quantities, "minimum_temp_year")}, // degrees C, daily air temperature
+          maximum_temp_year{get_input(input_quantities, "maximum_temp_year")},
 
           soil_clay_content_1{get_input(input_quantities, "soil_clay_content_1")}, // % volume
           soil_clay_content_2{get_input(input_quantities, "soil_clay_content_2")},
@@ -57,6 +59,8 @@ class soil_temperature : public direct_module
           soil_type_indicator_6{get_input(input_quantities, "soil_type_indicator_6")},
 
           hour{get_input(input_quantities, "hour")},
+          doy{get_input(input_quantities, "doy")},
+          start_doy{get_input(input_quantities, "start_doy")},
 
           // Get pointers to output quantities
           soil_temperature_1_op{get_op(output_quantities, "soil_temperature_1")}, // K, hourly
@@ -100,6 +104,8 @@ class soil_temperature : public direct_module
 
     double const& minimum_temp_day;
     double const& maximum_temp_day;
+    double const& minimum_temp_year;
+    double const& maximum_temp_year;
 
     double const& soil_clay_content_1;
     double const& soil_clay_content_2;
@@ -116,6 +122,8 @@ class soil_temperature : public direct_module
     double const& soil_type_indicator_6;
 
     double const& hour;
+    double const& doy;
+    double const& start_doy;
 
     // Pointers to output quantities
     double* soil_temperature_1_op;

@@ -28,6 +28,8 @@ string_vector soil_temperature::get_inputs()
 
         "minimum_temp_day", // degrees C
         "maximum_temp_day",
+        "minimum_temp_year",
+        "maximum_temp_year",
 
         "soil_clay_content_1", // % volume
         "soil_clay_content_2",
@@ -51,6 +53,8 @@ string_vector soil_temperature::get_inputs()
         "soil_type_indicator_6",
 
         "hour",
+        "doy",
+        "start_doy",
 
     };
 }
@@ -123,13 +127,15 @@ void soil_temperature::do_operation() const
     }
 
     double tot_soil_depth_arr[] = {
-        sd_arr[0],
-        sd_arr[0] + sd_arr[1],
-        sd_arr[0] + sd_arr[1] + sd_arr[2],
-        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3],
-        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3] + sd_arr[4],
-        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3] + sd_arr[4] + sd_arr[5]
+        sd_arr[0]/2,
+        sd_arr[0] + (sd_arr[1]/2),
+        sd_arr[0] + sd_arr[1] + (sd_arr[2]/2),
+        sd_arr[0] + sd_arr[1] + sd_arr[2] + (sd_arr[3]/2),
+        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3] + (sd_arr[4]/2),
+        sd_arr[0] + sd_arr[1] + sd_arr[2] + sd_arr[3] + sd_arr[4] + (sd_arr[5]/2)
     };
+
+    double day_current = doy;
 
     // Degree of saturation calculated via definitions of porosity and volumetric swc
     std::vector<double> s_r_arr;
@@ -138,8 +144,11 @@ void soil_temperature::do_operation() const
     }
 
     // fudge by 0.5 degrees celcius is recommended because air temp is used instead of soil surface temp (Moore et al. (2020))
-    double min_K = minimum_temp_day + 273.15 + 0.5; // K
-    double max_K = maximum_temp_day + 273.15 + 0.5;
+    double min_K = minimum_temp_day + 273.15 + 2; // K
+    double max_K = maximum_temp_day + 273.15 + 5;
+
+    double min_K_year = minimum_temp_year + 273.15 + 2; // K
+    double max_K_year = maximum_temp_year + 273.15 + 5;
 
     // Thermal conductivity of water
     double k_w = 51.41/24; // kJ m-1 hr-1 K-1
@@ -194,11 +203,19 @@ void soil_temperature::do_operation() const
     }
 
     // sinusoidal function for hourly soil temperature variation
-    double w = (pi*2)/24; // frequency (1/hr)
+    double w = (pi*2)/24.0; // frequency (1/hr)
     std::vector<double> d_arr;
     for (int l = 0; l < max_rooting_layer; l++){
        d_arr.push_back(pow(((2*k_tot_arr[l])/(heat_cap_arr[l]*w)), 0.5)); // m
     }
+
+    // double w_day = (pi*2)/365.0; // frequency (1/day)
+    // // yearly frequency in units of 1/hour
+    // double w_day_hour = (pi*2)/(24.0*365.0); // used to calculate annual d because k is in units of hr
+    // std::vector<double> d_arr_year;
+    // for (int l = 0; l < max_rooting_layer; l++){
+    //    d_arr_year.push_back(pow(((2*k_tot_arr[l])/(heat_cap_arr[l]*w_day_hour)), 0.5)); // m
+    // }
 
     // amplitude at a given depth (hr)
     std::vector<double> a_z_arr;
@@ -206,31 +223,56 @@ void soil_temperature::do_operation() const
         a_z_arr.push_back(((max_K - min_K)/2)*exp(-tot_soil_depth_arr[l]/d_arr[l])); // K
     }
 
+    // amplitude (day)
+    // std::vector<double> a_z_arr_year;
+    // for(int l = 0; l < max_rooting_layer; l++){
+    //     a_z_arr_year.push_back(((max_K_year - min_K_year)/2)*exp(-tot_soil_depth_arr[l]/d_arr_year[l])); // K
+    // }
+
     // average daily soil surface temp
     double T_a = (min_K + max_K)/2; // K
+
+    // average annual soil surface temp
+    // double T_a_year = (min_K_year + max_K_year)/2; // K
 
     // lag time (hrs) calculation for each soil layer
     // the amount of time it takes for a temperature fluctuation to travel from the surface to a given depth
     // lag time = (24hrs/2*pi) x (z/d), from Chu
-    std::vector<double> lag_time_arr;
-    for(int l = 0; l < max_rooting_layer; l++){
-        lag_time_arr.push_back((24/(2*pi))*(tot_soil_depth_arr[l]/d_arr[l])); // hr
-    }
+    // std::vector<double> lag_time_arr;
+    // for(int l = 0; l < max_rooting_layer; l++){
+    //     lag_time_arr.push_back((24/(2*pi))*(tot_soil_depth_arr[l]/d_arr[l])); // hr
+    // }
+
+    // std::vector<double> lag_time_arr_year;
+    // for(int l = 0; l < max_rooting_layer; l++){
+    //     lag_time_arr_year.push_back((365/(2*pi))*(tot_soil_depth_arr[l]/d_arr_year[l])); // hr
+    // }
 
     // phase constant aligns the temperature minimum to the actual observed minimum
-    std::vector<double> phase_arr;
-    for(int l = 0; l < max_rooting_layer; l++){
-        phase_arr.push_back((pi/2) + w*lag_time_arr[l]); // dimensionless
-    }
+    // std::vector<double> phase_arr;
+    // for(int l = 0; l < max_rooting_layer; l++){
+    //     phase_arr.push_back((pi/2) + w*lag_time_arr[l]); // dimensionless
+    // }
+
+    // std::vector<double> phase_arr_year;
+    // for(int l = 0; l < max_rooting_layer; l++){
+    //     phase_arr_year.push_back((pi/2) + w_day*lag_time_arr_year[l]); // dimensionless
+    // }
+
+    // maximum daily temperature occurs at 4 pm (16th hour)
+    // phase shift = (pi/2) - (16*(2*pi)/24)
+    double phase_shift_day = (pi/2) - ((16*2*pi)/24);
+
+    // maximum annual temperature occurs on DOY 206
+    // phase shift = (pi/2) - (206*(2*pi)/365)
+    // double phase_shift_year = (pi/2) - ((206*2*pi)/365);
 
     // soil temperature at each soil layer
     std::vector<double> soil_temperature_arr;
-    double T_i0 = T_a; // air temperature or soil temperature at previous layer
     double T_i = 0; // soil temperature at current layer
     for(int l = 0; l < max_rooting_layer; l++){
-        T_i = T_i0 + a_z_arr[l]*sin(w*hour - (tot_soil_depth_arr[l]/d_arr[l]) - phase_arr[l]); // soil temperature at layer i
+        T_i = T_a + a_z_arr[l]*sin(w*hour - (tot_soil_depth_arr[l]/d_arr[l]) + phase_shift_day); // soil temperature at layer i
         soil_temperature_arr.push_back(T_i);
-        T_i0 = T_i; 
     }
 
     // averaging soil temp
