@@ -32,7 +32,9 @@ direct_modules_new = c(direct_modules_new[1:(old_soil_evapo_index-1)],direct_mod
                        direct_modules_new[old_soil_evapo_index:length(direct_modules_new)]) # insert BioCroWater
 
 differential_modules_soil_water = list("BioCroWater:soil_evaporation","BioCroWater:multi_layer_soil_profile",
-                                       "BioCroWP:pressure_potential_senescence")
+                                       "BioCroWP:pressure_potential_senescence"
+                                       #"BioCroWP:transport_balance"
+                                       )
 differential_modules_new = soybean$differential_modules
 old_soil_profile_index = which(differential_modules_new=="BioCro:two_layer_soil_profile")
 differential_modules_new = differential_modules_new[-old_soil_profile_index] #remove soil_profile
@@ -119,17 +121,17 @@ parameters =   within(soybean$parameters, {
   mod_leaf_x = 3 #9
   mod_leaf_y = 1 #0.75 #2
   mod_leaf_z = 3 #2.25 #9
-  mod_pods_x = 1 #2.25 #9
-  wp_crit = 0.40
+  mod_pods_x = 5 #2.25 #9
+  wp_crit = 0.45
   storage_water_frac = 0.8
   #R_soil_root_base = 0.2 #0.0216217167
   #R_root_stem_base = 0.02  #0.154440833
   #R_stem_leaf_base = 0.1 #0.0926645
   #R_stem_pods_base = 0.25 #0.0926645
-  R_soil_root = 0.04
-  R_root_stem = 0.03
-  R_stem_leaf = 0.02
-  R_stem_pods = 0.04
+  R_soil_root = 15
+  R_root_stem = 7
+  R_stem_leaf = 3
+  R_stem_pods = 4
   #n_resistance = 0.25
   #soil_temperature_avg = 298.15
   t_root_m = 0.0
@@ -166,8 +168,8 @@ result <- run_biocro(
   differential_modules_new,
   ode_solver=list(type ="boost_rosenbrock",
                   output_step_size = 1.0,
-                  adaptive_rel_error_tol = 1e-2, #1e-4 try increasing or decreasing
-                  adaptive_abs_error_tol = 1e-2, #1e-4
+                  adaptive_rel_error_tol = 1e-4, #1e-4 try increasing or decreasing
+                  adaptive_abs_error_tol = 1e-4, #1e-4
                   adaptive_max_steps = 10000)
 )
 sim_end <- Sys.time()
@@ -201,7 +203,7 @@ legend("bottomleft",
 canopy_transpiration_g = result$canopy_transpiration_rate*10^6
 
 plot(result$time/24, result$F_rwu, col='red',
-     ylim=c(-1000000,60000000),
+     ylim=c(-1000000,6000000),
      #ylim = c(0,20000),
      main='Organ Flows',
      xlab = 'DOY',
@@ -276,6 +278,9 @@ legend("topright",
 par(mfrow = c(1, 1))
 
 length(result$time)
+
+plot(result$fractional_doy, result$root_total_potential)
+points(result$fractional_doy, result$root_pressure_potential + result$root_osmotic_potential)
 
 result$F_rwu - result$F_root_stem
 result$F_root_stem - result$F_stem_leaf - result$F_stem_pods
@@ -708,7 +713,7 @@ legend("bottomright",
        lty = c(1, 1, 1, 1, 1))
 
 plot(result$time[2000:2048]/24, result$root_pressure_potential[2000:2048],
-     ylim=c(0.0,0.4),
+     #ylim=c(0.0,0.4),
      main="Pressure Potential in Organs: DOY 230-232",
      xlab="DOY",
      ylab="Pressure Potential (MPa)",

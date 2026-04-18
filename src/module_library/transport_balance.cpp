@@ -11,6 +11,7 @@ string_vector transport_balance::get_inputs()
         "canopy_transpiration_rate", "doy", "hour",
         "root_pressure_potential", "stem_pressure_potential", "leaf_pressure_potential", "pods_pressure_potential",
         "root_osmotic_potential", "stem_osmotic_potential", "leaf_osmotic_potential", "pods_osmotic_potential",
+        "root_total_potential", "stem_total_potential", "leaf_total_potential", "pods_total_potential",
         "root_water_content", "stem_water_content", "leaf_water_content", "pods_water_content",
         "root_volume", "stem_volume", "leaf_volume", "pods_volume",
         "root_volume_plastic", "stem_volume_plastic", "leaf_volume_plastic", "pods_volume_plastic",
@@ -29,6 +30,7 @@ string_vector transport_balance::get_outputs()
 {
     return {
         "root_pressure_potential", "stem_pressure_potential", "leaf_pressure_potential", "pods_pressure_potential",
+        "root_total_potential", "stem_total_potential", "leaf_total_potential", "pods_total_potential",
         "root_water_content", "stem_water_content", "leaf_water_content", "pods_water_content",
         "root_volume", "stem_volume", "leaf_volume", "pods_volume",
         "root_volume_plastic", "stem_volume_plastic", "leaf_volume_plastic", "pods_volume_plastic"
@@ -50,7 +52,7 @@ void transport_balance::do_operation() const
     int i = 0;
     int i_max = 1000;
     double const tol = 0.01; // g ha-1 hr-1
-    double alpha = 0.3; // Damping factor to prevent infinite bouncing
+    // double alpha = 0.3; // Damping factor to prevent infinite bouncing
 
     // Loop to calculate water flux, W, pressure potential, and V 
     while (i < i_max) {
@@ -65,9 +67,9 @@ void transport_balance::do_operation() const
 
         // Recalculate W, pressure potential, and V based on those fluxes
         potential_calc = pressure_potential_optimization(
-            canopy_transpiration_rate, doy, hour, pressure_root_guess,
-            pressure_stem_guess, pressure_leaf_guess, pressure_pods_guess, 
+            canopy_transpiration_rate, doy, hour, root_pressure_potential, stem_pressure_potential, leaf_pressure_potential, pods_pressure_potential,
             root_osmotic_potential, stem_osmotic_potential, leaf_osmotic_potential, pods_osmotic_potential,
+            root_total_potential, stem_total_potential, leaf_total_potential, pods_total_potential,
             root_water_content, stem_water_content, leaf_water_content, pods_water_content, 
             root_volume, stem_volume, leaf_volume, pods_volume, 
             root_volume_plastic, stem_volume_plastic, leaf_volume_plastic, pods_volume_plastic, 
@@ -114,6 +116,15 @@ void transport_balance::do_operation() const
             break;
         }
 
+        if (i == i_max) {
+        // Warning if the model fails to converge within timestep
+            std::cout << "Warning: transport_balance reached max iterations without converging.\n";
+            std::cout << "DOY: " << doy << " Hour: " << hour << " | Final residuals - Root: " << std::abs(pressure_root_guess - root_pressure_potential) 
+                    << ", Stem: " << std::abs(pressure_stem_guess - stem_pressure_potential) 
+                    << ", Leaf: " << std::abs(pressure_leaf_guess - leaf_pressure_potential) 
+                    << ", Pods: " << std::abs(pressure_pods_guess - pods_pressure_potential) << std::endl;
+        }
+
         pressure_root_guess = root_calc;
         pressure_stem_guess = stem_calc;
         pressure_leaf_guess = leaf_calc;
@@ -122,12 +133,7 @@ void transport_balance::do_operation() const
         ++i;
     };
 
-    if (i == i_max) {
-        // Warning if the model fails to converge within timestep
-        std::cout << "Warning: transport_balance reached max iterations without converging.\n";
-    } else {
-        std::cout << "DOY: " << doy << " Hour: " << hour << " | Iterations to converge: " << i << std::endl;
-    }
+    std::cout << "DOY: " << doy << " Hour: " << hour << " | Iterations to converge: " << i << std::endl;
 
     // Update outputs
     
@@ -135,6 +141,11 @@ void transport_balance::do_operation() const
     update(stem_pressure_potential_op, potential_calc.d_stem_pressure_potential);
     update(leaf_pressure_potential_op, potential_calc.d_leaf_pressure_potential);
     update(pods_pressure_potential_op, potential_calc.d_pods_pressure_potential);
+
+    update(root_total_potential_op, potential_calc.d_root_total_potential);
+    update(stem_total_potential_op, potential_calc.d_stem_total_potential);
+    update(leaf_total_potential_op, potential_calc.d_leaf_total_potential);
+    update(pods_total_potential_op, potential_calc.d_pods_total_potential);
     
     update(root_water_content_op, potential_calc.d_root_water_content);
     update(stem_water_content_op, potential_calc.d_stem_water_content);

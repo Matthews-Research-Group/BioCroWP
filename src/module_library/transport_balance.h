@@ -29,6 +29,10 @@ class transport_balance : public differential_module
           stem_osmotic_potential{get_input(input_quantities, "stem_osmotic_potential")},
           leaf_osmotic_potential{get_input(input_quantities, "leaf_osmotic_potential")},
           pods_osmotic_potential{get_input(input_quantities, "pods_osmotic_potential")},
+          root_total_potential{get_input(input_quantities, "root_total_potential")},
+          stem_total_potential{get_input(input_quantities, "stem_total_potential")},
+          leaf_total_potential{get_input(input_quantities, "leaf_total_potential")},
+          pods_total_potential{get_input(input_quantities, "pods_total_potential")},
           root_water_content{get_input(input_quantities, "root_water_content")},
           stem_water_content{get_input(input_quantities, "stem_water_content")},
           leaf_water_content{get_input(input_quantities, "leaf_water_content")},
@@ -79,6 +83,10 @@ class transport_balance : public differential_module
           stem_pressure_potential_op{get_op(output_quantities, "stem_pressure_potential")},
           leaf_pressure_potential_op{get_op(output_quantities, "leaf_pressure_potential")},
           pods_pressure_potential_op{get_op(output_quantities, "pods_pressure_potential")},
+          root_total_potential_op{get_op(output_quantities, "root_total_potential")},
+          stem_total_potential_op{get_op(output_quantities, "stem_total_potential")},
+          leaf_total_potential_op{get_op(output_quantities, "leaf_total_potential")},
+          pods_total_potential_op{get_op(output_quantities, "pods_total_potential")},
           root_water_content_op{get_op(output_quantities, "root_water_content")},
           stem_water_content_op{get_op(output_quantities, "stem_water_content")},
           leaf_water_content_op{get_op(output_quantities, "leaf_water_content")},
@@ -111,6 +119,10 @@ class transport_balance : public differential_module
     double const& stem_osmotic_potential;
     double const& leaf_osmotic_potential;
     double const& pods_osmotic_potential;
+    double const& root_total_potential;
+    double const& stem_total_potential;
+    double const& leaf_total_potential;
+    double const& pods_total_potential;
     double const& root_water_content;
     double const& stem_water_content;
     double const& leaf_water_content;
@@ -161,6 +173,10 @@ class transport_balance : public differential_module
     double* stem_pressure_potential_op;
     double* leaf_pressure_potential_op;
     double* pods_pressure_potential_op;
+    double* root_total_potential_op;
+    double* stem_total_potential_op;
+    double* leaf_total_potential_op;
+    double* pods_total_potential_op;
     double* root_water_content_op;
     double* stem_water_content_op;
     double* leaf_water_content_op;

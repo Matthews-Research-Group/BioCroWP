@@ -290,8 +290,8 @@ void pressure_potential_senescence::do_operation() const
             dW_root = -W_root;
         }
         // }
-        // V_root_new = V_root + (dW_root/pw);
-        root_dPP = ((dW_root / (pw * V_root) - (ext_root_z + 2 * ext_root_x) * (potential_value_root - wp_crit))
+        V_root_new = V_root + (dW_root/pw);
+        root_dPP = ((dW_root / (pw * V_root_new) - (ext_root_z + 2 * ext_root_x) * (potential_value_root - wp_crit))
                     * ((mod_root_x * mod_root_z) / (2 * mod_root_z + mod_root_x))); // MPa hr-1
         dV_root_plastic = (ext_root_z + 2 * ext_root_x) * (potential_value_root - wp_crit); // m3 plant-1 hr-1
         dV_root_elastic = V_root * ((2 * mod_root_z + mod_root_x) / (mod_root_z * mod_root_z)) * root_dPP;
@@ -304,14 +304,14 @@ void pressure_potential_senescence::do_operation() const
             dW_root = -W_root;
         }
         // }
-       // V_root_new = V_root + (dW_root/pw);
-        root_dPP = ((dW_root / (pw * V_root))
+        V_root_new = V_root + (dW_root/pw);
+        root_dPP = ((dW_root / (pw * V_root_new))
                     * ((mod_root_x * mod_root_z) / (2 * mod_root_z + mod_root_x)));
         dV_root_elastic = V_root * (((2 * mod_root_z + mod_root_x) / (mod_root_z * mod_root_z)) * root_dPP);
         dV_root_plastic = 0.0;
     }
 
-    double dV_root = dV_root_elastic + dV_root_plastic;
+    double dV_root = dW_root/pw;
 
     // ========================================================================
     // Stem water potential update
@@ -335,8 +335,8 @@ void pressure_potential_senescence::do_operation() const
             dW_stem = -W_stem;
         }
         // }
-        // V_stem_new = V_stem + (dW_stem/pw);
-        stem_dPP = ((dW_stem / (pw * V_stem) - (ext_stem_z + 2 * ext_stem_x) * (potential_value_stem - wp_crit))
+        V_stem_new = V_stem + (dW_stem/pw);
+        stem_dPP = ((dW_stem / (pw * V_stem_new) - (ext_stem_z + 2 * ext_stem_x) * (potential_value_stem - wp_crit))
                         * ((mod_stem_x * mod_stem_z) / (2 * mod_stem_z + mod_stem_x)));
         dV_stem_elastic = V_stem * ((2 * mod_stem_z + mod_stem_x) / (mod_stem_z * mod_stem_z)) * stem_dPP;
         dV_stem_plastic = (ext_stem_z + 2 * ext_stem_x) * (potential_value_stem - wp_crit);
@@ -349,14 +349,14 @@ void pressure_potential_senescence::do_operation() const
             dW_stem = -W_stem;
         }
         // }
-        // V_stem = V_stem + (dW_stem/pw);
-        stem_dPP = ((dW_stem / (pw * V_stem))
+        V_stem_new = V_stem + (dW_stem/pw);
+        stem_dPP = ((dW_stem / (pw * V_stem_new))
                     * ((mod_stem_x * mod_stem_z) / (2 * mod_stem_z + mod_stem_x)));
         dV_stem_elastic = V_stem * ((2 * mod_stem_z + mod_stem_x) / (mod_stem_z * mod_stem_z)) * stem_dPP;
         dV_stem_plastic = 0.0;
     }
 
-    double dV_stem = dV_stem_elastic + dV_stem_plastic;
+    double dV_stem = dW_stem/pw;
 
     // ========================================================================
     // Leaf water potential update
@@ -378,8 +378,8 @@ void pressure_potential_senescence::do_operation() const
         if (dW_leaf < -1 * W_leaf) {
             dW_leaf = -W_leaf;
         }
-        // V_leaf_new = V_leaf + (dW_leaf/pw);
-        leaf_dPP = ((dW_leaf / (pw * V_leaf) - (ext_leaf_z + ext_leaf_y) * (potential_value_leaf - wp_crit))
+        V_leaf_new = V_leaf + (dW_leaf/pw);
+        leaf_dPP = ((dW_leaf / (pw * V_leaf_new) - (ext_leaf_z + ext_leaf_y) * (potential_value_leaf - wp_crit))
                         * ((mod_leaf_x * mod_leaf_z * mod_leaf_y) / (mod_leaf_x * mod_leaf_z + mod_leaf_z * mod_leaf_y + mod_leaf_x * mod_leaf_y)));
         dV_leaf_elastic = V_leaf * ((mod_leaf_x * mod_leaf_z + mod_leaf_z * mod_leaf_y + mod_leaf_x * mod_leaf_y) / (mod_leaf_x * mod_leaf_z * mod_leaf_y)) * leaf_dPP;
         dV_leaf_plastic = (ext_leaf_z + ext_leaf_y) * (potential_value_leaf - wp_crit);
@@ -390,14 +390,14 @@ void pressure_potential_senescence::do_operation() const
         if (dW_leaf < -1 * W_leaf) {
             dW_leaf = -W_leaf;
         }
-        // V_leaf_new = V_leaf + (dW_leaf/pw);
-        leaf_dPP = ((dW_leaf / (pw * V_leaf))
+        V_leaf_new = V_leaf + (dW_leaf/pw);
+        leaf_dPP = ((dW_leaf / (pw * V_leaf_new))
                     * ((mod_leaf_x * mod_leaf_z * mod_leaf_y) / (mod_leaf_x * mod_leaf_z + mod_leaf_z * mod_leaf_y + mod_leaf_x * mod_leaf_y)));
         dV_leaf_elastic = V_leaf * ((mod_leaf_x * mod_leaf_z + mod_leaf_z * mod_leaf_y + mod_leaf_x * mod_leaf_y) / (mod_leaf_x * mod_leaf_z * mod_leaf_y)) * leaf_dPP;
         dV_leaf_plastic = 0.0;
     }
 
-    double dV_leaf = dV_leaf_elastic + dV_leaf_plastic;
+    double dV_leaf = dW_leaf/pw;
 
     // ========================================================================
     // Pod water potential update
@@ -429,7 +429,7 @@ void pressure_potential_senescence::do_operation() const
     //     dV_pods_plastic = 0.0;
     // }
 
-    double dV_pods = dV_pods_elastic + dV_pods_plastic;
+    double dV_pods = dW_pods/pw;
 
     // ========================================================================
     // Update outputs

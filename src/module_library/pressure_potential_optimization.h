@@ -9,10 +9,10 @@ struct pressure_potential_outputs {
     double d_stem_pressure_potential;
     double d_leaf_pressure_potential;
     double d_pods_pressure_potential;
-    // double root_total_potential;
-    // double stem_total_potential;
-    // double leaf_total_potential;
-    // double pods_total_potential;
+    double d_root_total_potential;
+    double d_stem_total_potential;
+    double d_leaf_total_potential;
+    double d_pods_total_potential;
     double d_root_water_content;
     double d_stem_water_content;
     double d_leaf_water_content;
@@ -39,6 +39,10 @@ pressure_potential_outputs pressure_potential_optimization(
     double stem_osmotic_potential,
     double leaf_osmotic_potential,
     double pods_osmotic_potential,
+    double root_total_potential,
+    double stem_total_potential,
+    double leaf_total_potential,
+    double pods_total_potential,
     double root_water_content,
     double stem_water_content,
     double leaf_water_content,

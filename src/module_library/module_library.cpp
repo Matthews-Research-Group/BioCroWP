@@ -9,6 +9,7 @@
 #include "longitudinal_extensibility_update.h"
 #include "pressure_potential_senescence.h"
 #include "total_potential.h"
+//#include "transport_balance.h"
 #include "calculate_flux.h"
 #include "total_biomass.h"
 
@@ -21,6 +22,7 @@ creator_map BioCroWP::module_library::library_entries =
     {"longitudinal_extensibility_update", &create_mc<longitudinal_extensibility_update>},
     {"pressure_potential_senescence", &create_mc<pressure_potential_senescence>},
     {"total_potential", &create_mc<total_potential>},
+    //{"transport_balance", &create_mc<transport_balance>},
     {"calculate_flux", &create_mc<calculate_flux>},
     {"total_biomass", &create_mc<total_biomass>}
 };

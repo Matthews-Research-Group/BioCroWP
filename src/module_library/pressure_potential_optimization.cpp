@@ -26,6 +26,10 @@ pressure_potential_outputs pressure_potential_optimization(
     double stem_osmotic_potential,
     double leaf_osmotic_potential,
     double pods_osmotic_potential,
+    double root_total_potential,
+    double stem_total_potential,
+    double leaf_total_potential,
+    double pods_total_potential,
     double root_water_content,
     double stem_water_content,
     double leaf_water_content,
@@ -254,16 +258,20 @@ pressure_potential_outputs pressure_potential_optimization(
     double leaf_total_potential_new = leaf_pressure_potential_new + leaf_osmotic_potential;
     double pods_total_potential_new = pods_pressure_potential_new + pods_osmotic_potential;
 
+    double root_dTP = root_total_potential_new - root_total_potential;
+    double stem_dTP = stem_total_potential_new - stem_total_potential;
+    double leaf_dTP = leaf_total_potential_new - leaf_total_potential;
+    double pods_dTP = pods_total_potential_new - pods_total_potential;
 
     // Store results
     result.d_root_pressure_potential = root_dPP;
     result.d_stem_pressure_potential = stem_dPP;
     result.d_leaf_pressure_potential = leaf_dPP;
     result.d_pods_pressure_potential = pods_dPP;
-    // result.root_total_potential = root_total_potential_new;
-    // result.stem_total_potential = stem_total_potential_new;
-    // result.leaf_total_potential = leaf_total_potential_new;
-    // result.pods_total_potential = pods_total_potential_new;
+    result.d_root_total_potential = root_dTP;
+    result.d_stem_total_potential = stem_dTP;
+    result.d_leaf_total_potential = leaf_dTP;
+    result.d_pods_total_potential = pods_dTP;
     result.d_root_water_content = dW_root;
     result.d_stem_water_content = dW_stem;
     result.d_leaf_water_content = dW_leaf;
